@@ -1,0 +1,2039 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPL 워크북 자동 출제기 · Click & Print</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Fraunces:ital,wght@0,400;0,600;1,400;1,600&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #FAF5EC; --paper-deep: #F1E8D4; --ink: #3A332C; --ink-soft: #6B5E50;
+  --rule: #C5B79C; --gold: #C8A861;
+  --c-A: #E89856; --c-B: #D97B6E; --c-C: #D4A23C; --c-D: #7FA088; --c-P5: #5BA89C; --c-P6: #A37650;
+  --c-L1: #E89856; --c-L2: #D97B6E; --c-L3: #D4A23C; --c-L4: #7FA088; --c-L5: #5BA89C;
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans KR',sans-serif; font-size:14px; line-height:1.5; }
+.app-header { position:sticky; top:0; z-index:100; background:var(--paper-deep); border-bottom:2px solid var(--rule); padding:14px 24px; display:flex; align-items:center; justify-content:space-between; }
+.logo { font-family:'Fraunces',serif; font-style:italic; font-size:20px; font-weight:600; }
+.logo .em { color:var(--gold); }
+.toolbar { display:flex; gap:10px; }
+.btn { border:1.5px solid var(--rule); background:var(--paper); color:var(--ink); padding:10px 18px; font-family:'IBM Plex Sans KR',sans-serif; font-size:13px; border-radius:6px; cursor:pointer; transition:all 0.15s; font-weight:500; }
+.btn:hover { background:var(--paper-deep); border-color:var(--gold); }
+.btn.primary { background:var(--gold); color:white; border-color:var(--gold); }
+.btn.primary:hover { background:#B89A4F; }
+.btn.shuffle { background:var(--c-P5); color:white; border-color:var(--c-P5); }
+.btn.shuffle:hover { background:#4A9384; }
+
+.main { display:grid; grid-template-columns: 1fr 400px; min-height:calc(100vh - 65px); }
+.volumes-panel { padding:24px 28px; overflow-y:auto; background:var(--paper); }
+.volumes-panel h1 { font-family:'Gowun Batang',serif; font-weight:700; font-size:22px; margin:0 0 6px; }
+.volumes-panel .sub { font-family:'Fraunces',serif; font-style:italic; color:var(--ink-soft); font-size:13px; margin-bottom:24px; }
+
+.level-block { margin-bottom:28px; }
+.level-title { display:flex; align-items:center; gap:8px; font-family:'Gowun Batang',serif; font-weight:700; font-size:15px; padding:8px 14px; border-radius:6px 6px 0 0; color:white; margin-bottom:0; }
+.level-title.lv1 { background:var(--c-L1); }
+.level-title.lv2 { background:var(--c-L2); }
+.level-title.lv3 { background:var(--c-L3); }
+.level-title.lv4 { background:var(--c-L4); }
+.level-title.lv5 { background:var(--c-L5); }
+
+.vol-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; padding:14px; background:#FFFCF5; border:1.5px solid var(--rule); border-top:none; border-radius:0 0 6px 6px; }
+.vol-card { background:var(--paper); border:1.5px solid var(--rule); border-radius:6px; padding:10px 8px; cursor:pointer; transition:all 0.15s; text-align:center; position:relative; min-height:78px; display:flex; flex-direction:column; justify-content:center; }
+.vol-card:hover { border-color:var(--gold); background:#FFFCF5; transform:translateY(-1px); box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+.vol-card.active { background:var(--gold); color:white; border-color:var(--gold); }
+.vol-card.active .vol-num, .vol-card.active .vol-title, .vol-card.active .vol-pool { color:white; }
+.vol-num { font-family:'Fraunces',serif; font-style:italic; font-weight:600; font-size:18px; color:var(--gold); margin-bottom:3px; }
+.vol-title { font-family:'Gowun Batang',serif; font-size:11px; color:var(--ink); line-height:1.3; }
+.vol-pool { position:absolute; top:5px; right:6px; font-size:9px; color:var(--ink-soft); font-family:'IBM Plex Sans KR',sans-serif; }
+.vol-card.has-pool .vol-pool::before { content:'●'; color:#4A7C4A; margin-right:2px; }
+.vol-card:not(.has-pool) .vol-pool::before { content:'○'; color:#B07A2A; margin-right:2px; }
+
+.preview-panel { background:var(--paper-deep); border-left:2px solid var(--rule); padding:24px; position:sticky; top:65px; height:calc(100vh - 65px); overflow-y:auto; }
+.pv-card { background:var(--paper); border:1.5px solid var(--rule); border-radius:6px; padding:16px; margin-bottom:14px; }
+.pv-card h3 { font-family:'Fraunces',serif; font-style:italic; font-size:14px; color:var(--ink-soft); margin:0 0 10px; }
+.pv-meta-title { font-family:'Gowun Batang',serif; font-weight:700; font-size:18px; color:var(--ink); margin:0 0 4px; }
+.pv-meta-sub { font-family:'Fraunces',serif; font-style:italic; font-size:12px; color:var(--ink-soft); margin-bottom:10px; }
+.pv-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px dashed var(--rule); font-size:12px; }
+.pv-row:last-child { border-bottom:none; }
+.pv-row .k { color:var(--ink-soft); }
+.pv-row .v { font-weight:600; color:var(--ink); }
+.pv-chars { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+.pv-char-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border:1.5px solid; border-radius:12px; font-size:11px; background:#FFFCF5; }
+.pv-char-mark { font-family:'Gowun Batang',serif; font-weight:700; }
+.pv-warn { background:rgba(176,122,42,0.12); border-left:3px solid #B07A2A; padding:8px 12px; font-size:11px; color:var(--ink); border-radius:0 4px 4px 0; }
+.pv-ok { background:rgba(74,124,74,0.12); border-left:3px solid #4A7C4A; padding:8px 12px; font-size:11px; color:var(--ink); border-radius:0 4px 4px 0; }
+
+.section-strip { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.section-strip .chip { padding:4px 10px; border-radius:12px; font-size:11px; font-family:'IBM Plex Sans KR',sans-serif; font-weight:500; color:white; }
+.chip.cA { background:var(--c-A); } .chip.cB { background:var(--c-B); } .chip.cC { background:var(--c-C); } .chip.cD { background:var(--c-D); } .chip.cP5 { background:var(--c-P5); } .chip.cP6 { background:var(--c-P6); }
+
+.toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--ink); color:white; padding:12px 24px; border-radius:6px; font-size:13px; opacity:0; pointer-events:none; transition:opacity 0.2s; z-index:200; }
+.toast.show { opacity:1; }
+.toast.success { background:#4A7C4A; }
+.toast.error { background:#A04030; }
+
+@media (max-width: 1100px) { .main { grid-template-columns:1fr; } .preview-panel { position:static; height:auto; border-left:none; border-top:2px solid var(--rule); } }
+
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; display:none; align-items:center; justify-content:center; }
+.modal-overlay.show { display:flex; }
+.modal-box { background:var(--paper); border-radius:8px; padding:24px; width:90%; max-width:480px; box-shadow:0 8px 32px rgba(0,0,0,0.2); }
+.modal-box h3 { margin:0 0 8px; font-family:'Gowun Batang',serif; font-size:18px; }
+.modal-box p { font-size:12px; color:var(--ink-soft); line-height:1.6; margin:0 0 16px; }
+.modal-box input { width:100%; padding:10px; border:1.5px solid var(--rule); border-radius:4px; font-family:monospace; margin-bottom:12px; box-sizing:border-box; font-size:13px; }
+.modal-box input:focus { outline:none; border-color:var(--gold); }
+.modal-actions { display:flex; justify-content:space-between; gap:8px; }
+.modal-actions .right { display:flex; gap:8px; }
+.btn.danger { color:#A04030; }
+.btn.api-on { background:#E0F0E0; border-color:#4A7C4A; color:#2A5A2A; }
+
+.ai-bulk { background:linear-gradient(135deg, var(--gold), var(--c-A)); color:white; border:none; padding:12px 16px; border-radius:6px; font-size:13px; cursor:pointer; width:100%; font-weight:600; margin-top:8px; transition:opacity 0.15s; }
+.ai-bulk:hover { opacity:0.92; }
+.ai-bulk:disabled { opacity:0.5; cursor:not-allowed; }
+.gen-progress { background:var(--paper-deep); padding:10px 12px; border-radius:4px; margin:8px 0; font-size:11px; color:var(--ink); line-height:1.5; }
+.gen-progress.done { background:#E0F0E0; }
+.gen-progress-bar { height:6px; background:var(--rule); border-radius:3px; overflow:hidden; margin-top:6px; }
+.gen-progress-fill { height:100%; background:var(--gold); transition:width 0.3s; }
+.thumb-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-top:10px; }
+.thumb-grid .thumb { aspect-ratio:1; background:#FFFCF5; border:1.5px solid var(--rule); border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--ink-soft); position:relative; }
+.thumb img { width:100%; height:100%; object-fit:cover; }
+.thumb .thumb-no { position:absolute; top:2px; left:3px; background:rgba(0,0,0,0.5); color:white; font-size:9px; padding:1px 4px; border-radius:2px; }
+
+.ed-label { display:block; font-size:11px; color:var(--ink-soft); margin:8px 0 3px; font-weight:600; }
+.ed-input { width:100%; padding:6px 10px; border:1.5px solid var(--rule); border-radius:4px; font-family:'IBM Plex Sans KR',sans-serif; font-size:12px; color:var(--ink); background:#FFFCF5; box-sizing:border-box; }
+.ed-input:focus { outline:none; border-color:var(--gold); background:white; }
+textarea.ed-input { font-family:'Gowun Batang',serif; min-height:40px; resize:vertical; }
+.ws-modal-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:14px; }
+.ws-tab { padding:8px 6px; border:1.5px solid var(--rule); background:var(--paper); border-radius:4px; cursor:pointer; font-size:12px; text-align:center; }
+.ws-tab.active { background:var(--gold); color:white; border-color:var(--gold); }
+.ws-slot-card { background:#FFFCF5; border:1.5px solid var(--rule); border-radius:6px; padding:12px; margin-bottom:10px; }
+.ws-slot-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.ws-slot-no { background:var(--gold); color:white; padding:3px 10px; border-radius:12px; font-size:11px; }
+.modal-wide { max-width:760px; max-height:85vh; overflow-y:auto; }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="logo">EPL <span class="em">·</span> Workbook Auto Issuer <span class="em">·</span> 클릭 출제기</div>
+  <div class="toolbar">
+    <button class="btn" id="btnApiKey">🔑 <span id="apiKeyLabel">API 미설정</span></button>
+    <button class="btn shuffle" id="btnShuffle">🎲 단어 셔플 (재출제)</button>
+    <button class="btn primary" id="btnGenerate">📄 PDF로 저장</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="wsModal">
+  <div class="modal-box modal-wide">
+    <h3>📝 워크시트 콘텐츠 편집</h3>
+    <div class="ws-modal-grid" id="wsTabs"></div>
+    <div id="wsBody"></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <span style="font-size:11px;color:var(--ink-soft)">수정 즉시 자동 저장됩니다</span>
+      <div class="right">
+        <button class="btn primary" id="btnCloseWs">완료</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="apiModal">
+  <div class="modal-box">
+    <h3>🔑 OpenAI API Key 설정</h3>
+    <p>OpenAI DALL-E 3로 그림을 자동 생성합니다. 키는 이 브라우저(localStorage)에만 저장됩니다.<br>
+       발급: <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--gold)">platform.openai.com/api-keys</a><br>
+       <strong>필수:</strong> <a href="https://platform.openai.com/settings/organization/general" target="_blank" style="color:var(--gold)">조직 Verify</a> + <a href="https://platform.openai.com/settings/organization/billing/overview" target="_blank" style="color:var(--gold)">결제 등록 + $5 충전</a><br>
+       비용: 그림 1장 medium quality ≈ $0.04 · 권당 9장 ≈ 540원</p>
+    <input type="password" id="apiKeyInput" placeholder="sk-...">
+    <div class="modal-actions">
+      <button class="btn danger" id="btnClearKey">키 삭제</button>
+      <div class="right">
+        <button class="btn" id="btnTestKey">🧪 키 테스트 (1장 호출)</button>
+        <button class="btn" id="btnCloseApiModal">취소</button>
+        <button class="btn primary" id="btnSaveKey">저장</button>
+      </div>
+    </div>
+    <div id="apiTestResult" style="margin-top:12px;font-size:11px;line-height:1.5"></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="volumes-panel">
+    <h1>📚 EPL 50권 — 권 번호 클릭만으로 자동 출제</h1>
+    <div class="sub">입력 필드는 없습니다. 권을 누르면 응원·워크시트·답지가 풀에서 무작위로 채워집니다. 같은 권을 다시 누르거나 🎲 셔플 버튼으로 재출제하면 새 조합이 나옵니다.</div>
+    <div id="volumes"></div>
+  </div>
+
+  <aside class="preview-panel">
+    <div class="pv-card">
+      <h3>현재 출제</h3>
+      <div id="current">— 권을 선택해 주세요 —</div>
+    </div>
+    <div class="pv-card">
+      <h3>✏️ 권 정보 직접 편집</h3>
+      <div id="editPanel"></div>
+    </div>
+    <div class="pv-card">
+      <h3>📝 워크시트 콘텐츠 편집</h3>
+      <div style="font-size:11px;color:var(--ink-soft);line-height:1.5;margin-bottom:8px">
+        자동 출제된 한국어 문장·Word Bank·모범답안을 직접 수정할 수 있습니다.
+      </div>
+      <button class="btn" style="width:100%" id="btnEditWs">📝 워크시트 편집 모달 열기</button>
+    </div>
+    <div class="pv-card">
+      <h3>🤖 그림 자동 생성 (DALL-E 3)</h3>
+      <div style="font-size:11px;color:var(--ink-soft);line-height:1.6;margin-bottom:8px">
+        선택된 권의 Part 5 그림 8장 + Part 6 그림 1장을 자동 생성합니다.<br>
+        비용: 약 <strong>540원</strong> (그림 1장 ≈ 60원)
+      </div>
+      <button class="ai-bulk" id="btnBulkGenP5">🎨 이 권의 그림 9장 일괄 생성</button>
+      <div id="bulkProgress"></div>
+      <div class="thumb-grid" id="thumbGrid"></div>
+    </div>
+    <div class="pv-card">
+      <h3>풀 상태 안내</h3>
+      <div style="font-size:11px; color:var(--ink-soft); line-height:1.7;">
+        <div><span style="color:#4A7C4A">●</span> 전용 풀 보유 — 권 고유 문장으로 출제</div>
+        <div><span style="color:#B07A2A">○</span> 풀 준비 중 — Vol.01 풀로 임시 출제 (메타는 정확)</div>
+        <div style="margin-top:8px; padding-top:8px; border-top:1px dashed var(--rule);">전용 풀은 점진적으로 확장됩니다.</div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// 캐릭터
+// ════════════════════════════════════════════════
+const CHARS = [
+  { id:'c1', mark:'○', name:'동글이', role:'주어', color:'#E89856' },
+  { id:'c2', mark:'□', name:'액션이', role:'동사', color:'#D97B6E' },
+  { id:'c3', mark:'___', name:'반짝이', role:'목적어', color:'#D4A23C' },
+  { id:'c4', mark:'★', name:'거울이', role:'보어', color:'#5BA89C' },
+  { id:'c5', mark:'△', name:'이음이', role:'접속사', color:'#7FA088' },
+  { id:'c6', mark:'~', name:'꾸밈이', role:'수식어', color:'#A584B5' },
+  { id:'c7', mark:'( )', name:'주머니', role:'전치사구', color:'#7BA5C7' },
+  { id:'c8', mark:'[ ]', name:'보따리', role:'관계사', color:'#A37650' }
+];
+
+// ════════════════════════════════════════════════
+// 50권 커리큘럼
+// ════════════════════════════════════════════════
+const VOLUME_CURRICULUM = {
+  1:{ title:'둘이면 충분해', subtitle:'A Workbook for the Simplest Sentence', level:1, structure:'1형식 (○+□)', chars:['c1','c2'], desc:'동글이와 액션이, 두 친구만으로 만들어지는 가장 짧은 문장.' },
+  2:{ title:'셋이 모이면 완성돼', subtitle:'When Three Make a Whole', level:1, structure:'2형식 (○+□+★)', chars:['c1','c2','c4'], desc:'동글이·액션이·거울이, 세 친구가 모이면 더 깊은 문장이 만들어져요.' },
+  3:{ title:'함께 만드는 이야기', subtitle:'Stories We Build Together', level:1, structure:'3형식 (○+□+___)', chars:['c1','c2','c3'], desc:'반짝이까지 함께 — 세 친구가 만드는 이야기.' },
+  4:{ title:'선물 주고받기', subtitle:'The Gift Exchange', level:1, structure:'4형식 (주고받기)', chars:['c1','c2','c3'], desc:'주는 사람·받는 사람·선물 — 네 친구의 이야기.' },
+  5:{ title:'변신 마법', subtitle:'The Magic of Becoming', level:1, structure:'5형식 (___+★)', chars:['c1','c2','c3','c4'], desc:'반짝이가 거울이로 변하는 마법 같은 문장.' },
+  6:{ title:'다섯 친구 한자리에', subtitle:'Five Friends All Together', level:1, structure:'1~5형식 종합', chars:['c1','c2','c3','c4'], desc:'다섯 친구가 한자리에 모이면 모든 문장이 가능해요.' },
+  7:{ title:'누구 이야기일까?', subtitle:'Whose Story Is This?', level:1, structure:'대명사', chars:['c1'], desc:'동글이가 변신해요 — He, She, It, They.' },
+  8:{ title:'하나, 둘, 여럿', subtitle:'One, Two, and Many', level:1, structure:'명사·관사', chars:['c1'], desc:'a, an, the — 동글이의 옷차림이 바뀌어요.' },
+  9:{ title:'어떤? 어떻게?', subtitle:'What Kind? How?', level:1, structure:'형용사·부사', chars:['c6'], desc:'꾸밈이가 등장 — 어떤? 어떻게?' },
+ 10:{ title:'첫 한 문장 마스터', subtitle:'Level 1 Certified', level:1, structure:'LEVEL 1 종합', chars:['c1','c2','c3','c4'], desc:'한 문장으로 그림을 묘사하는 마지막 단계.' },
+ 11:{ title:'지금 일어나는 일', subtitle:'Things Happening Now', level:2, structure:'현재시제', chars:['c1','c2'], desc:'바로 지금 일어나는 일을 영어로.' },
+ 12:{ title:'어제 있었던 일', subtitle:'What Happened Yesterday', level:2, structure:'과거시제', chars:['c1','c2'], desc:'어제 있었던 이야기를 영어로.' },
+ 13:{ title:'내일 할 일', subtitle:'Things to Do Tomorrow', level:2, structure:'미래시제', chars:['c1','c2'], desc:'내일 할 일을 미리 그려보세요.' },
+ 14:{ title:'해봤어요', subtitle:'I Have Done It', level:2, structure:'현재완료', chars:['c1','c2'], desc:'경험을 표현하는 시제.' },
+ 15:{ title:'시간을 자유롭게', subtitle:'Across All Times', level:2, structure:'시제 종합', chars:['c1','c2'], desc:'과거·현재·미래·완료 모두 한자리에.' },
+ 16:{ title:'궁금해요!', subtitle:'I Wonder!', level:2, structure:'의문문', chars:['c1','c2'], desc:'질문하는 문장을 자유롭게.' },
+ 17:{ title:'아니에요', subtitle:'Not Quite', level:2, structure:'부정문', chars:['c1','c2'], desc:'부정문으로 의미 뒤집기.' },
+ 18:{ title:'할 수 있어요', subtitle:'I Can Do It', level:2, structure:'조동사', chars:['c1','c2'], desc:'can, may, must — 도우미 동사.' },
+ 19:{ title:'어디서? 언제?', subtitle:'Where? When?', level:2, structure:'전치사구', chars:['c1','c2','c7'], desc:'주머니가 등장 — 어디서, 언제.' },
+ 20:{ title:'풍부한 문장 마스터', subtitle:'Level 2 Certified', level:2, structure:'LEVEL 2 종합', chars:['c1','c2','c7'], desc:'살이 붙은 문장의 마지막 단계.' },
+ 21:{ title:'그리고, 하지만', subtitle:'And, But', level:3, structure:'등위접속사', chars:['c5'], desc:'이음이가 등장 — 문장과 문장을 잇기.' },
+ 22:{ title:'왜냐하면', subtitle:'Because', level:3, structure:'종속접속사', chars:['c5'], desc:'이유와 조건으로 묶는 문장.' },
+ 23:{ title:'~하는 것 (1)', subtitle:'To-Do', level:3, structure:'to부정사', chars:['c2'], desc:'명사 자리에 동사를 — to부정사.' },
+ 24:{ title:'~하는 것 (2)', subtitle:'Doing', level:3, structure:'동명사', chars:['c2'], desc:'동명사로 더 자연스럽게.' },
+ 25:{ title:'명사를 꾸미는 한 문장', subtitle:'A Sentence That Describes', level:3, structure:'관계대명사', chars:['c8'], desc:'보따리가 등장 — 명사를 꾸미는 절.' },
+ 26:{ title:'시간·장소를 꾸미기', subtitle:'When and Where', level:3, structure:'관계부사', chars:['c8'], desc:'관계부사로 시간·장소 꾸미기.' },
+ 27:{ title:'누가 했는지 모를 때', subtitle:'When the Doer Is Unknown', level:3, structure:'수동태', chars:['c2'], desc:'수동태로 행위자를 가리기.' },
+ 28:{ title:'만약에 ~라면', subtitle:'What If', level:3, structure:'가정법', chars:['c2'], desc:'상상의 세계를 영어로.' },
+ 29:{ title:'그가 말했어요', subtitle:'He Said', level:3, structure:'화법', chars:['c2'], desc:'다른 사람의 말을 옮기기.' },
+ 30:{ title:'긴 문장 마스터', subtitle:'Level 3 Certified', level:3, structure:'LEVEL 3 종합', chars:['c5','c8'], desc:'길게 연결된 문장의 마지막 단계.' },
+ 31:{ title:'한 단락으로 묘사', subtitle:'A Whole Paragraph', level:4, structure:'단락 기본', chars:['c1','c2'], desc:'문장이 모여 한 단락이 돼요.' },
+ 32:{ title:'시간 순서 이야기', subtitle:'In Time Order', level:4, structure:'시간순 단락', chars:['c1','c2'], desc:'시간 순서로 풀어내는 글.' },
+ 33:{ title:'자세히 묘사하기', subtitle:'In Detail', level:4, structure:'묘사 단락', chars:['c6'], desc:'꾸밈이와 함께 묘사하는 단락.' },
+ 34:{ title:'비교하고 대조하기', subtitle:'Compare and Contrast', level:4, structure:'비교 단락', chars:['c5'], desc:'두 가지를 나란히 보는 단락.' },
+ 35:{ title:'원인과 결과', subtitle:'Cause and Effect', level:4, structure:'인과 단락', chars:['c5'], desc:'원인과 결과로 잇는 단락.' },
+ 36:{ title:'내 생각 말하기', subtitle:'My Opinion', level:4, structure:'의견 단락', chars:['c1'], desc:'내 생각을 정리해 표현하기.' },
+ 37:{ title:'소개하기', subtitle:'Introducing', level:4, structure:'소개 단락', chars:['c1','c2'], desc:'사람·장소·물건을 소개하는 단락.' },
+ 38:{ title:'경험 이야기하기', subtitle:'My Experience', level:4, structure:'경험 단락', chars:['c1','c2'], desc:'직접 경험한 일을 단락으로.' },
+ 39:{ title:'일상의 한 장면', subtitle:'A Scene from My Day', level:4, structure:'일기 단락', chars:['c1','c2'], desc:'오늘 하루의 한 장면을 단락으로.' },
+ 40:{ title:'한 단락 마스터', subtitle:'Level 4 Certified', level:4, structure:'LEVEL 4 종합', chars:['c1','c2'], desc:'단락 쓰기의 마지막 단계.' },
+ 41:{ title:'세 단락 글쓰기', subtitle:'Three-Paragraph Essay', level:5, structure:'3-paragraph', chars:['c1','c2'], desc:'서론·본론·결론의 첫 만남.' },
+ 42:{ title:'다섯 단락 에세이', subtitle:'Five-Paragraph Essay', level:5, structure:'5-paragraph', chars:['c1','c2'], desc:'표준 5단락 에세이를 완성.' },
+ 43:{ title:'이야기 글', subtitle:'Narrative', level:5, structure:'Narrative', chars:['c1','c2'], desc:'사건과 인물이 살아 움직이는 글.' },
+ 44:{ title:'설명·묘사 글', subtitle:'Descriptive', level:5, structure:'Descriptive', chars:['c6'], desc:'생생한 묘사로 읽는 사람을 끌어들이기.' },
+ 45:{ title:'비교 에세이', subtitle:'Compare/Contrast', level:5, structure:'Compare/Contrast', chars:['c5'], desc:'둘을 나란히 비교하는 글.' },
+ 46:{ title:'설득하는 글', subtitle:'Persuasive', level:5, structure:'Persuasive', chars:['c1'], desc:'근거로 상대를 설득하는 글.' },
+ 47:{ title:'의견 에세이', subtitle:'Opinion', level:5, structure:'Opinion', chars:['c1'], desc:'내 의견을 또렷이 펼치는 글.' },
+ 48:{ title:'책 리뷰', subtitle:'Review', level:5, structure:'Review', chars:['c1','c8'], desc:'책·영화를 평가하는 글.' },
+ 49:{ title:'실용 글쓰기', subtitle:'Letters and Diaries', level:5, structure:'일기·편지', chars:['c1','c2'], desc:'편지와 일기 같은 실용 글쓰기.' },
+ 50:{ title:'포트폴리오 완성', subtitle:'Portfolio', level:5, structure:'LEVEL 5 종합', chars:['c1','c2','c3','c4','c5'], desc:'1~49권의 결실을 한 권으로 모으기.' }
+};
+
+// ════════════════════════════════════════════════
+// 권별 문장 풀
+// ════════════════════════════════════════════════
+const VOLUME_POOLS = {
+  1: {
+    label: '1형식 ○+□',
+    pool: [
+      { en:'Birds sing.', ko:'새들이 노래해요.', s:'Birds', v:'sing' },
+      { en:'A dog barks.', ko:'개가 짖어요.', s:'A dog', v:'barks' },
+      { en:'My cat sleeps.', ko:'내 고양이가 자요.', s:'My cat', v:'sleeps' },
+      { en:'Wild lions roar.', ko:'사자들이 으르렁거려요.', s:'Wild lions', v:'roar' },
+      { en:'Little puppies bark.', ko:'강아지들이 짖어요.', s:'Little puppies', v:'bark' },
+      { en:'Big elephants walk.', ko:'큰 코끼리들이 걸어요.', s:'Big elephants', v:'walk' },
+      { en:'Small rabbits jump.', ko:'작은 토끼들이 뛰어요.', s:'Small rabbits', v:'jump' },
+      { en:'Frogs jump.', ko:'개구리들이 뛰어요.', s:'Frogs', v:'jump' },
+      { en:'Ducks swim.', ko:'오리들이 헤엄쳐요.', s:'Ducks', v:'swim' },
+      { en:'Horses run.', ko:'말들이 달려요.', s:'Horses', v:'run' },
+      { en:'Cows moo.', ko:'소들이 음매해요.', s:'Cows', v:'moo' },
+      { en:'Bees buzz.', ko:'벌들이 윙윙거려요.', s:'Bees', v:'buzz' },
+      { en:'Mom cooks.', ko:'엄마가 요리해요.', s:'Mom', v:'cooks' },
+      { en:'Dad drives.', ko:'아빠가 운전해요.', s:'Dad', v:'drives' },
+      { en:'My sister sings.', ko:'여동생이 노래해요.', s:'My sister', v:'sings' },
+      { en:'My brother plays.', ko:'형이 놀아요.', s:'My brother', v:'plays' },
+      { en:'Grandma walks.', ko:'할머니가 걸어요.', s:'Grandma', v:'walks' },
+      { en:'Grandpa reads.', ko:'할아버지가 읽으세요.', s:'Grandpa', v:'reads' },
+      { en:'Our family gathers.', ko:'우리 가족이 모여요.', s:'Our family', v:'gathers' },
+      { en:'My friend laughs.', ko:'내 친구가 웃어요.', s:'My friend', v:'laughs' },
+      { en:'Students arrive.', ko:'학생들이 도착해요.', s:'Students', v:'arrive' },
+      { en:'The bell rings.', ko:'종이 울려요.', s:'The bell', v:'rings' },
+      { en:'The teacher smiles.', ko:'선생님이 미소 지어요.', s:'The teacher', v:'smiles' },
+      { en:'Children laugh.', ko:'아이들이 웃어요.', s:'Children', v:'laugh' },
+      { en:'Books fall.', ko:'책들이 떨어져요.', s:'Books', v:'fall' },
+      { en:'The clock ticks.', ko:'시계가 째깍거려요.', s:'The clock', v:'ticks' },
+      { en:'My pencil rolls.', ko:'연필이 굴러가요.', s:'My pencil', v:'rolls' },
+      { en:'The chalk breaks.', ko:'분필이 부서져요.', s:'The chalk', v:'breaks' },
+      { en:'Rain falls.', ko:'비가 내려요.', s:'Rain', v:'falls' },
+      { en:'Snow melts.', ko:'눈이 녹아요.', s:'Snow', v:'melts' },
+      { en:'The wind blows.', ko:'바람이 불어요.', s:'The wind', v:'blows' },
+      { en:'The sun shines.', ko:'해가 빛나요.', s:'The sun', v:'shines' },
+      { en:'Thunder roars.', ko:'천둥이 울려요.', s:'Thunder', v:'roars' },
+      { en:'Lightning flashes.', ko:'번개가 번쩍여요.', s:'Lightning', v:'flashes' },
+      { en:'Fog spreads.', ko:'안개가 퍼져요.', s:'Fog', v:'spreads' },
+      { en:'Stars shine.', ko:'별들이 빛나요.', s:'Stars', v:'shine' },
+      { en:'The moon shines.', ko:'달이 빛나요.', s:'The moon', v:'shines' },
+      { en:'Flowers bloom.', ko:'꽃들이 펴요.', s:'Flowers', v:'bloom' },
+      { en:'Leaves fall.', ko:'잎들이 떨어져요.', s:'Leaves', v:'fall' },
+      { en:'The sky darkens.', ko:'하늘이 어두워져요.', s:'The sky', v:'darkens' },
+      { en:'Time passes.', ko:'시간이 흘러요.', s:'Time', v:'passes' },
+      { en:'Morning comes.', ko:'아침이 와요.', s:'Morning', v:'comes' },
+      { en:'The day ends.', ko:'하루가 끝나요.', s:'The day', v:'ends' },
+      { en:'Night deepens.', ko:'밤이 깊어져요.', s:'Night', v:'deepens' },
+      { en:'Spring returns.', ko:'봄이 돌아와요.', s:'Spring', v:'returns' },
+      { en:'Cars move.', ko:'차들이 움직여요.', s:'Cars', v:'move' },
+      { en:'Buses run.', ko:'버스들이 달려요.', s:'Buses', v:'run' },
+      { en:'Trains arrive.', ko:'기차들이 도착해요.', s:'Trains', v:'arrive' },
+      { en:'The river flows.', ko:'강이 흘러요.', s:'The river', v:'flows' },
+      { en:'Trees grow.', ko:'나무들이 자라요.', s:'Trees', v:'grow' },
+      { en:'Trees sway.', ko:'나무들이 흔들려요.', s:'Trees', v:'sway' },
+      { en:'Houses sleep.', ko:'집들이 잠들어요.', s:'Houses', v:'sleep' },
+      { en:'Lights glow.', ko:'불빛이 빛나요.', s:'Lights', v:'glow' },
+      { en:'Birds fly.', ko:'새들이 날아요.', s:'Birds', v:'fly' },
+      { en:'The garden grows.', ko:'정원이 자라요.', s:'The garden', v:'grows' },
+      { en:'Steam rises.', ko:'김이 올라가요.', s:'Steam', v:'rises' },
+      { en:'The party begins.', ko:'파티가 시작돼요.', s:'The party', v:'begins' },
+      { en:'The world awakens.', ko:'세상이 깨어나요.', s:'The world', v:'awakens' },
+      { en:'A puppy runs.', ko:'강아지가 달려요.', s:'A puppy', v:'runs' },
+      { en:'Owls hoot.', ko:'부엉이들이 울어요.', s:'Owls', v:'hoot' }
+    ],
+    themes: {
+      A: ['🐾 동물 친구들의 하루','👨‍👩‍👧 우리 가족','🏫 학교 생활','🌦 날씨와 자연','🏃 매일 하는 일','🐝 작은 동물들','⛈ 날씨의 여러 얼굴','🔔 학교의 하루 풍경','🌳 자연 풍경','🌙 밤과 별'],
+      B: ['🐾 동물의 행동','👨‍👩‍👧 가족의 일상','🏫 교실 풍경','🌳 자연 속 풍경','⏰ 시간의 흐름'],
+      C: ['✏️ 영작 1단계 — 가장 기본','✏️ 영작 2단계 — 한 단어 더','✏️ 영작 3단계 — 더 자세히','✏️ 영작 4단계 — 어디서? 언제?','✏️ 영작 5단계 — 마스터'],
+      D: ['📝 종합 평가 1','📝 종합 평가 2','📝 종합 평가 3','📝 종합 평가 4','🏆 최종 종합 평가']
+    },
+    instructions: {
+      A: '문장에서 동글이(○ 주인공)와 액션이(□ 행동)를 찾아 표시하세요.',
+      B: '한국어 문장을 보고 빈칸을 영어로 채워 보세요.',
+      C: '한국어를 보고 ○ + □ 영어 문장을 써 보세요.',
+      D: '세 부분 모두 풀어 보세요.'
+    }
+  },
+  2: {
+    label: '2형식 ○+□+★',
+    pool: [
+      { en:'She is happy.', ko:'그녀는 행복해요.', s:'She', v:'is', c:'happy' },
+      { en:'He is tall.', ko:'그는 키가 커요.', s:'He', v:'is', c:'tall' },
+      { en:'The sky is blue.', ko:'하늘이 파래요.', s:'The sky', v:'is', c:'blue' },
+      { en:'The grass is green.', ko:'풀이 초록색이에요.', s:'The grass', v:'is', c:'green' },
+      { en:'The flower is red.', ko:'꽃이 빨개요.', s:'The flower', v:'is', c:'red' },
+      { en:'My cat is small.', ko:'내 고양이가 작아요.', s:'My cat', v:'is', c:'small' },
+      { en:'The room is warm.', ko:'방이 따뜻해요.', s:'The room', v:'is', c:'warm' },
+      { en:'The river is wide.', ko:'강이 넓어요.', s:'The river', v:'is', c:'wide' },
+      { en:'The mountain is high.', ko:'산이 높아요.', s:'The mountain', v:'is', c:'high' },
+      { en:'The tree is old.', ko:'나무가 오래됐어요.', s:'The tree', v:'is', c:'old' },
+      { en:'He is a doctor.', ko:'그는 의사예요.', s:'He', v:'is', c:'a doctor' },
+      { en:'She is a teacher.', ko:'그녀는 선생님이에요.', s:'She', v:'is', c:'a teacher' },
+      { en:'My dad is a chef.', ko:'아빠가 요리사예요.', s:'My dad', v:'is', c:'a chef' },
+      { en:'I am a student.', ko:'나는 학생이에요.', s:'I', v:'am', c:'a student' },
+      { en:'We are friends.', ko:'우리는 친구예요.', s:'We', v:'are', c:'friends' },
+      { en:'The leaves turn yellow.', ko:'잎들이 노란색이 돼요.', s:'The leaves', v:'turn', c:'yellow' },
+      { en:'The wind gets stronger.', ko:'바람이 더 세져요.', s:'The wind', v:'gets', c:'stronger' },
+      { en:'The day becomes longer.', ko:'하루가 길어져요.', s:'The day', v:'becomes', c:'longer' },
+      { en:'The puppy grows big.', ko:'강아지가 커져요.', s:'The puppy', v:'grows', c:'big' },
+      { en:'The night becomes quiet.', ko:'밤이 조용해져요.', s:'The night', v:'becomes', c:'quiet' },
+      { en:'The cake looks delicious.', ko:'케이크가 맛있어 보여요.', s:'The cake', v:'looks', c:'delicious' },
+      { en:'She looks happy.', ko:'그녀는 행복해 보여요.', s:'She', v:'looks', c:'happy' },
+      { en:'He seems tired.', ko:'그는 피곤해 보여요.', s:'He', v:'seems', c:'tired' },
+      { en:'The clouds look soft.', ko:'구름이 부드러워 보여요.', s:'The clouds', v:'look', c:'soft' },
+      { en:'The sky seems clear.', ko:'하늘이 맑아 보여요.', s:'The sky', v:'seems', c:'clear' },
+      { en:'The pillow feels soft.', ko:'베개가 부드러워요.', s:'The pillow', v:'feels', c:'soft' },
+      { en:'The flowers smell sweet.', ko:'꽃들이 달콤한 향기가 나요.', s:'The flowers', v:'smell', c:'sweet' },
+      { en:'The soup tastes good.', ko:'수프가 맛있어요.', s:'The soup', v:'tastes', c:'good' },
+      { en:'The music sounds nice.', ko:'음악이 좋게 들려요.', s:'The music', v:'sounds', c:'nice' },
+      { en:'The water feels cold.', ko:'물이 차가워요.', s:'The water', v:'feels', c:'cold' },
+      { en:'The lake is calm.', ko:'호수가 잔잔해요.', s:'The lake', v:'is', c:'calm' },
+      { en:'My room is clean.', ko:'내 방이 깨끗해요.', s:'My room', v:'is', c:'clean' },
+      { en:'The book is heavy.', ko:'책이 무거워요.', s:'The book', v:'is', c:'heavy' },
+      { en:'The bread is fresh.', ko:'빵이 신선해요.', s:'The bread', v:'is', c:'fresh' },
+      { en:'The garden is pretty.', ko:'정원이 예뻐요.', s:'The garden', v:'is', c:'pretty' },
+      { en:'The teacher is kind.', ko:'선생님이 친절해요.', s:'The teacher', v:'is', c:'kind' },
+      { en:'The water is clear.', ko:'물이 맑아요.', s:'The water', v:'is', c:'clear' },
+      { en:'The chair is empty.', ko:'의자가 비어 있어요.', s:'The chair', v:'is', c:'empty' },
+      { en:'The store is busy.', ko:'가게가 분주해요.', s:'The store', v:'is', c:'busy' },
+      { en:'The dog is friendly.', ko:'개가 친절해요.', s:'The dog', v:'is', c:'friendly' },
+      { en:'The sun is bright.', ko:'해가 밝아요.', s:'The sun', v:'is', c:'bright' },
+      { en:'The moon is round.', ko:'달이 둥글어요.', s:'The moon', v:'is', c:'round' },
+      { en:'The wind is gentle.', ko:'바람이 부드러워요.', s:'The wind', v:'is', c:'gentle' },
+      { en:'The forest is dark.', ko:'숲이 어두워요.', s:'The forest', v:'is', c:'dark' },
+      { en:'My brother is funny.', ko:'형이 웃겨요.', s:'My brother', v:'is', c:'funny' },
+      { en:'Grandma is wise.', ko:'할머니가 지혜로워요.', s:'Grandma', v:'is', c:'wise' },
+      { en:'The cat is sleepy.', ko:'고양이가 졸려요.', s:'The cat', v:'is', c:'sleepy' },
+      { en:'The puppy is curious.', ko:'강아지가 호기심이 많아요.', s:'The puppy', v:'is', c:'curious' },
+      { en:'Spring is beautiful.', ko:'봄이 아름다워요.', s:'Spring', v:'is', c:'beautiful' },
+      { en:'Summer is hot.', ko:'여름이 더워요.', s:'Summer', v:'is', c:'hot' },
+      { en:'Autumn is cool.', ko:'가을이 시원해요.', s:'Autumn', v:'is', c:'cool' },
+      { en:'Winter is cold.', ko:'겨울이 추워요.', s:'Winter', v:'is', c:'cold' },
+      { en:'The fire is hot.', ko:'불이 뜨거워요.', s:'The fire', v:'is', c:'hot' },
+      { en:'The ice is cold.', ko:'얼음이 차가워요.', s:'The ice', v:'is', c:'cold' },
+      { en:'The road is long.', ko:'길이 길어요.', s:'The road', v:'is', c:'long' },
+      { en:'The bridge is strong.', ko:'다리가 튼튼해요.', s:'The bridge', v:'is', c:'strong' },
+      { en:'The path is narrow.', ko:'길이 좁아요.', s:'The path', v:'is', c:'narrow' },
+      { en:'The house is quiet.', ko:'집이 조용해요.', s:'The house', v:'is', c:'quiet' },
+      { en:'The flag is bright.', ko:'깃발이 밝아요.', s:'The flag', v:'is', c:'bright' },
+      { en:'The party is fun.', ko:'파티가 재미있어요.', s:'The party', v:'is', c:'fun' }
+    ],
+    themes: {
+      A: ['🌈 상태와 감정','👨‍👩‍👧 우리 가족 모습','🏫 학교의 분위기','🌳 자연의 모습','🍳 음식과 맛','🌅 하늘과 날씨','🐾 동물 친구들','🏠 집과 방','💼 직업과 사람','🍂 계절의 느낌'],
+      B: ['🌈 상태 채우기','👨‍👩‍👧 가족 모습','🍳 음식과 맛','🌳 자연의 인상','🏫 학교 분위기'],
+      C: ['✏️ 영작 1 — 가장 간단한 ★','✏️ 영작 2 — 사람의 직업','✏️ 영작 3 — 변하는 상태','✏️ 영작 4 — 보이는 그대로','✏️ 영작 5 — 마스터'],
+      D: ['📝 종합 평가 1','📝 종합 평가 2','📝 종합 평가 3','📝 종합 평가 4','🏆 최종 종합 평가']
+    },
+    instructions: {
+      A: '문장에서 동글이(○ 주인공)와 액션이(□ 동사)와 거울이(★ 보충)를 찾아 표시하세요.',
+      B: '한국어 문장을 보고 ○+□+★을 영어로 채워 보세요.',
+      C: '한국어를 보고 ○+□+★ 영어 문장을 써 보세요.',
+      D: '세 부분 모두 풀어 보세요.'
+    }
+  },
+  3: {
+    label: '3형식 ○+□+___',
+    pool: [
+      { en:'I like apples.', ko:'나는 사과를 좋아해요.', s:'I', v:'like', o:'apples' },
+      { en:'She reads books.', ko:'그녀는 책을 읽어요.', s:'She', v:'reads', o:'books' },
+      { en:'They play soccer.', ko:'그들은 축구를 해요.', s:'They', v:'play', o:'soccer' },
+      { en:'He eats lunch.', ko:'그는 점심을 먹어요.', s:'He', v:'eats', o:'lunch' },
+      { en:'We study English.', ko:'우리는 영어를 공부해요.', s:'We', v:'study', o:'English' },
+      { en:'Mom cooks dinner.', ko:'엄마가 저녁을 요리해요.', s:'Mom', v:'cooks', o:'dinner' },
+      { en:'Dad drives a car.', ko:'아빠가 차를 운전해요.', s:'Dad', v:'drives', o:'a car' },
+      { en:'I drink water.', ko:'나는 물을 마셔요.', s:'I', v:'drink', o:'water' },
+      { en:'She draws pictures.', ko:'그녀는 그림을 그려요.', s:'She', v:'draws', o:'pictures' },
+      { en:'They watch movies.', ko:'그들은 영화를 봐요.', s:'They', v:'watch', o:'movies' },
+      { en:'He writes letters.', ko:'그는 편지를 써요.', s:'He', v:'writes', o:'letters' },
+      { en:'We clean the room.', ko:'우리는 방을 청소해요.', s:'We', v:'clean', o:'the room' },
+      { en:'She loves music.', ko:'그녀는 음악을 좋아해요.', s:'She', v:'loves', o:'music' },
+      { en:'I want pizza.', ko:'나는 피자를 원해요.', s:'I', v:'want', o:'pizza' },
+      { en:'He kicks the ball.', ko:'그는 공을 차요.', s:'He', v:'kicks', o:'the ball' },
+      { en:'They sing songs.', ko:'그들은 노래를 불러요.', s:'They', v:'sing', o:'songs' },
+      { en:'She opens the door.', ko:'그녀는 문을 열어요.', s:'She', v:'opens', o:'the door' },
+      { en:'We build a house.', ko:'우리는 집을 지어요.', s:'We', v:'build', o:'a house' },
+      { en:'I feed my cat.', ko:'나는 고양이에게 밥을 줘요.', s:'I', v:'feed', o:'my cat' },
+      { en:'He helps friends.', ko:'그는 친구들을 도와요.', s:'He', v:'helps', o:'friends' },
+      { en:'She washes dishes.', ko:'그녀는 설거지를 해요.', s:'She', v:'washes', o:'dishes' },
+      { en:'I brush my teeth.', ko:'나는 이를 닦아요.', s:'I', v:'brush', o:'my teeth' },
+      { en:'He rides a bike.', ko:'그는 자전거를 타요.', s:'He', v:'rides', o:'a bike' },
+      { en:'We plant flowers.', ko:'우리는 꽃을 심어요.', s:'We', v:'plant', o:'flowers' },
+      { en:'They throw the ball.', ko:'그들은 공을 던져요.', s:'They', v:'throw', o:'the ball' },
+      { en:'She closes the window.', ko:'그녀는 창문을 닫아요.', s:'She', v:'closes', o:'the window' },
+      { en:'I carry my bag.', ko:'나는 가방을 들어요.', s:'I', v:'carry', o:'my bag' },
+      { en:'He catches a fish.', ko:'그는 물고기를 잡아요.', s:'He', v:'catches', o:'a fish' },
+      { en:'We sing a song.', ko:'우리는 노래를 불러요.', s:'We', v:'sing', o:'a song' },
+      { en:'She wears a hat.', ko:'그녀는 모자를 써요.', s:'She', v:'wears', o:'a hat' },
+      { en:'I make a cake.', ko:'나는 케이크를 만들어요.', s:'I', v:'make', o:'a cake' },
+      { en:'They cut the paper.', ko:'그들은 종이를 잘라요.', s:'They', v:'cut', o:'the paper' },
+      { en:'He holds a cup.', ko:'그는 컵을 잡고 있어요.', s:'He', v:'holds', o:'a cup' },
+      { en:'She counts the stars.', ko:'그녀는 별을 세요.', s:'She', v:'counts', o:'the stars' },
+      { en:'We wash the car.', ko:'우리는 차를 씻어요.', s:'We', v:'wash', o:'the car' },
+      { en:'I find my key.', ko:'나는 열쇠를 찾아요.', s:'I', v:'find', o:'my key' },
+      { en:'They push the cart.', ko:'그들은 카트를 밀어요.', s:'They', v:'push', o:'the cart' },
+      { en:'He paints a picture.', ko:'그는 그림을 그려요.', s:'He', v:'paints', o:'a picture' },
+      { en:'She fixes the toy.', ko:'그녀는 장난감을 고쳐요.', s:'She', v:'fixes', o:'the toy' },
+      { en:'I hear the music.', ko:'나는 음악을 들어요.', s:'I', v:'hear', o:'the music' },
+      { en:'We move the desk.', ko:'우리는 책상을 옮겨요.', s:'We', v:'move', o:'the desk' },
+      { en:'They eat breakfast.', ko:'그들은 아침을 먹어요.', s:'They', v:'eat', o:'breakfast' },
+      { en:'He packs his lunch.', ko:'그는 도시락을 싸요.', s:'He', v:'packs', o:'his lunch' },
+      { en:'She fills the glass.', ko:'그녀는 컵을 채워요.', s:'She', v:'fills', o:'the glass' },
+      { en:'I touch the snow.', ko:'나는 눈을 만져요.', s:'I', v:'touch', o:'the snow' },
+      { en:'We pick apples.', ko:'우리는 사과를 따요.', s:'We', v:'pick', o:'apples' },
+      { en:'They learn math.', ko:'그들은 수학을 배워요.', s:'They', v:'learn', o:'math' },
+      { en:'He breaks the egg.', ko:'그는 달걀을 깨요.', s:'He', v:'breaks', o:'the egg' },
+      { en:'She ties her shoes.', ko:'그녀는 신발을 묶어요.', s:'She', v:'ties', o:'her shoes' },
+      { en:'I collect stamps.', ko:'나는 우표를 모아요.', s:'I', v:'collect', o:'stamps' },
+      { en:'We share the pizza.', ko:'우리는 피자를 나눠요.', s:'We', v:'share', o:'the pizza' },
+      { en:'They fold the clothes.', ko:'그들은 옷을 개요.', s:'They', v:'fold', o:'the clothes' },
+      { en:'He pulls the rope.', ko:'그는 줄을 당겨요.', s:'He', v:'pulls', o:'the rope' },
+      { en:'She chooses a dress.', ko:'그녀는 드레스를 골라요.', s:'She', v:'chooses', o:'a dress' },
+      { en:'I need a pencil.', ko:'나는 연필이 필요해요.', s:'I', v:'need', o:'a pencil' },
+      { en:'We finish homework.', ko:'우리는 숙제를 끝내요.', s:'We', v:'finish', o:'homework' },
+      { en:'They bring snacks.', ko:'그들은 간식을 가져와요.', s:'They', v:'bring', o:'snacks' },
+      { en:'He enjoys the game.', ko:'그는 게임을 즐겨요.', s:'He', v:'enjoys', o:'the game' },
+      { en:'She remembers the song.', ko:'그녀는 그 노래를 기억해요.', s:'She', v:'remembers', o:'the song' },
+      { en:'We love our teacher.', ko:'우리는 선생님을 사랑해요.', s:'We', v:'love', o:'our teacher' }
+    ],
+    themes: {
+      A:['🍎 좋아하는 것','👨‍👩‍👧 가족의 일상','🏫 학교 활동','🐾 동물 돌보기','🍳 요리와 음식','🎵 음악과 취미','🏡 집안일','📚 공부와 읽기','⚽ 운동과 놀이','🎨 만들기와 그리기'],
+      B:['🍎 좋아하는 것','👨‍👩‍👧 가족의 일상','🐾 동물 돌보기','🍳 요리와 음식','⚽ 운동과 놀이'],
+      C:['✏️ 영작 1 — 좋아하는 것','✏️ 영작 2 — 일상 표현','✏️ 영작 3 — 동물 이야기','✏️ 영작 4 — 학교생활','✏️ 영작 5 — 마스터'],
+      D:['📝 종합 평가 1','📝 종합 평가 2','📝 종합 평가 3','📝 종합 평가 4','🏆 최종 종합 평가']
+    },
+    instructions: {
+      A:'문장에서 동글이(○ 주인공)와 액션이(□ 동사)와 반짝이(___ 대상)를 찾아 표시하세요.',
+      B:'한국어 문장을 보고 ○+□+___을 영어로 채워 보세요.',
+      C:'한국어를 보고 ○+□+___ 영어 문장을 써 보세요.',
+      D:'세 부분 모두 풀어 보세요.'
+    }
+  },
+  4: {
+    label: '4형식 주고받기',
+    pool: [
+      { en:'She gave me a book.', ko:'그녀가 나에게 책을 줬어요.', s:'She', v:'gave', o:'me', o2:'a book' },
+      { en:'He told us a story.', ko:'그가 우리에게 이야기를 해줬어요.', s:'He', v:'told', o:'us', o2:'a story' },
+      { en:'Mom made me breakfast.', ko:'엄마가 나에게 아침을 만들어줬어요.', s:'Mom', v:'made', o:'me', o2:'breakfast' },
+      { en:'I bought her a gift.', ko:'나는 그녀에게 선물을 사줬어요.', s:'I', v:'bought', o:'her', o2:'a gift' },
+      { en:'He teaches us math.', ko:'그가 우리에게 수학을 가르쳐요.', s:'He', v:'teaches', o:'us', o2:'math' },
+      { en:'She showed me her painting.', ko:'그녀가 나에게 그림을 보여줬어요.', s:'She', v:'showed', o:'me', o2:'her painting' },
+      { en:'Dad sent her flowers.', ko:'아빠가 그녀에게 꽃을 보냈어요.', s:'Dad', v:'sent', o:'her', o2:'flowers' },
+      { en:'I lent him money.', ko:'나는 그에게 돈을 빌려줬어요.', s:'I', v:'lent', o:'him', o2:'money' },
+      { en:'She asked me a question.', ko:'그녀가 나에게 질문을 했어요.', s:'She', v:'asked', o:'me', o2:'a question' },
+      { en:'They offered us help.', ko:'그들이 우리에게 도움을 제안했어요.', s:'They', v:'offered', o:'us', o2:'help' },
+      { en:'He wrote her a letter.', ko:'그가 그녀에게 편지를 썼어요.', s:'He', v:'wrote', o:'her', o2:'a letter' },
+      { en:'Mom cooked us dinner.', ko:'엄마가 우리에게 저녁을 해줬어요.', s:'Mom', v:'cooked', o:'us', o2:'dinner' },
+      { en:'She read me a poem.', ko:'그녀가 나에게 시를 읽어줬어요.', s:'She', v:'read', o:'me', o2:'a poem' },
+      { en:'He brought us snacks.', ko:'그가 우리에게 간식을 가져왔어요.', s:'He', v:'brought', o:'us', o2:'snacks' },
+      { en:'I passed him the ball.', ko:'나는 그에게 공을 넘겨줬어요.', s:'I', v:'passed', o:'him', o2:'the ball' },
+      { en:'She taught me English.', ko:'그녀가 나에게 영어를 가르쳐줬어요.', s:'She', v:'taught', o:'me', o2:'English' },
+      { en:'He bought me lunch.', ko:'그가 나에게 점심을 사줬어요.', s:'He', v:'bought', o:'me', o2:'lunch' },
+      { en:'I gave her a flower.', ko:'나는 그녀에게 꽃을 줬어요.', s:'I', v:'gave', o:'her', o2:'a flower' },
+      { en:'She sent him a card.', ko:'그녀가 그에게 카드를 보냈어요.', s:'She', v:'sent', o:'him', o2:'a card' },
+      { en:'Dad told me a secret.', ko:'아빠가 나에게 비밀을 말해줬어요.', s:'Dad', v:'told', o:'me', o2:'a secret' },
+      { en:'Mom gave us money.', ko:'엄마가 우리에게 돈을 줬어요.', s:'Mom', v:'gave', o:'us', o2:'money' },
+      { en:'He showed her the photo.', ko:'그가 그녀에게 사진을 보여줬어요.', s:'He', v:'showed', o:'her', o2:'the photo' },
+      { en:'I made him a sandwich.', ko:'나는 그에게 샌드위치를 만들어줬어요.', s:'I', v:'made', o:'him', o2:'a sandwich' },
+      { en:'She lent me her book.', ko:'그녀가 나에게 책을 빌려줬어요.', s:'She', v:'lent', o:'me', o2:'her book' },
+      { en:'They gave us a ride.', ko:'그들이 우리를 태워줬어요.', s:'They', v:'gave', o:'us', o2:'a ride' },
+      { en:'He wrote me a note.', ko:'그가 나에게 메모를 써줬어요.', s:'He', v:'wrote', o:'me', o2:'a note' },
+      { en:'She read us a fairy tale.', ko:'그녀가 우리에게 동화를 읽어줬어요.', s:'She', v:'read', o:'us', o2:'a fairy tale' },
+      { en:'I brought her water.', ko:'나는 그녀에게 물을 가져다줬어요.', s:'I', v:'brought', o:'her', o2:'water' },
+      { en:'Mom made them cookies.', ko:'엄마가 그들에게 쿠키를 만들어줬어요.', s:'Mom', v:'made', o:'them', o2:'cookies' },
+      { en:'He taught her science.', ko:'그가 그녀에게 과학을 가르쳐줬어요.', s:'He', v:'taught', o:'her', o2:'science' },
+      { en:'She asked him a favor.', ko:'그녀가 그에게 부탁을 했어요.', s:'She', v:'asked', o:'him', o2:'a favor' },
+      { en:'I told them the news.', ko:'나는 그들에게 소식을 전했어요.', s:'I', v:'told', o:'them', o2:'the news' },
+      { en:'Dad bought us toys.', ko:'아빠가 우리에게 장난감을 사줬어요.', s:'Dad', v:'bought', o:'us', o2:'toys' },
+      { en:'She gave me advice.', ko:'그녀가 나에게 조언을 해줬어요.', s:'She', v:'gave', o:'me', o2:'advice' },
+      { en:'He cooked her breakfast.', ko:'그가 그녀에게 아침을 만들어줬어요.', s:'He', v:'cooked', o:'her', o2:'breakfast' },
+      { en:'I showed him the map.', ko:'나는 그에게 지도를 보여줬어요.', s:'I', v:'showed', o:'him', o2:'the map' },
+      { en:'She offered me a seat.', ko:'그녀가 나에게 자리를 내줬어요.', s:'She', v:'offered', o:'me', o2:'a seat' },
+      { en:'They sent us a package.', ko:'그들이 우리에게 소포를 보냈어요.', s:'They', v:'sent', o:'us', o2:'a package' },
+      { en:'He brought them juice.', ko:'그가 그들에게 주스를 가져다줬어요.', s:'He', v:'brought', o:'them', o2:'juice' },
+      { en:'Mom told us a bedtime story.', ko:'엄마가 우리에게 잠자리 이야기를 해줬어요.', s:'Mom', v:'told', o:'us', o2:'a bedtime story' },
+      { en:'She passed me the salt.', ko:'그녀가 나에게 소금을 건네줬어요.', s:'She', v:'passed', o:'me', o2:'the salt' },
+      { en:'I gave them my number.', ko:'나는 그들에게 내 번호를 줬어요.', s:'I', v:'gave', o:'them', o2:'my number' },
+      { en:'He made us paper planes.', ko:'그가 우리에게 종이비행기를 만들어줬어요.', s:'He', v:'made', o:'us', o2:'paper planes' },
+      { en:'She showed me her garden.', ko:'그녀가 나에게 정원을 보여줬어요.', s:'She', v:'showed', o:'me', o2:'her garden' },
+      { en:'Dad read us the newspaper.', ko:'아빠가 우리에게 신문을 읽어줬어요.', s:'Dad', v:'read', o:'us', o2:'the newspaper' },
+      { en:'I bought her a ring.', ko:'나는 그녀에게 반지를 사줬어요.', s:'I', v:'bought', o:'her', o2:'a ring' },
+      { en:'He gave us a chance.', ko:'그가 우리에게 기회를 줬어요.', s:'He', v:'gave', o:'us', o2:'a chance' },
+      { en:'She taught them music.', ko:'그녀가 그들에게 음악을 가르쳐줬어요.', s:'She', v:'taught', o:'them', o2:'music' },
+      { en:'They offered her a job.', ko:'그들이 그녀에게 일자리를 제안했어요.', s:'They', v:'offered', o:'her', o2:'a job' },
+      { en:'I wrote her a poem.', ko:'나는 그녀에게 시를 써줬어요.', s:'I', v:'wrote', o:'her', o2:'a poem' },
+      { en:'Mom brought me milk.', ko:'엄마가 나에게 우유를 가져다줬어요.', s:'Mom', v:'brought', o:'me', o2:'milk' },
+      { en:'He lent us his umbrella.', ko:'그가 우리에게 우산을 빌려줬어요.', s:'He', v:'lent', o:'us', o2:'his umbrella' },
+      { en:'She cooked us lunch.', ko:'그녀가 우리에게 점심을 만들어줬어요.', s:'She', v:'cooked', o:'us', o2:'lunch' },
+      { en:'I sent them a message.', ko:'나는 그들에게 메시지를 보냈어요.', s:'I', v:'sent', o:'them', o2:'a message' },
+      { en:'He asked us a riddle.', ko:'그가 우리에게 수수께끼를 냈어요.', s:'He', v:'asked', o:'us', o2:'a riddle' },
+      { en:'She gave him a hug.', ko:'그녀가 그에게 안아줬어요.', s:'She', v:'gave', o:'him', o2:'a hug' },
+      { en:'Dad showed them the way.', ko:'아빠가 그들에게 길을 보여줬어요.', s:'Dad', v:'showed', o:'them', o2:'the way' },
+      { en:'I made her a card.', ko:'나는 그녀에게 카드를 만들어줬어요.', s:'I', v:'made', o:'her', o2:'a card' },
+      { en:'They brought us gifts.', ko:'그들이 우리에게 선물을 가져왔어요.', s:'They', v:'brought', o:'us', o2:'gifts' },
+      { en:'He read her a book.', ko:'그가 그녀에게 책을 읽어줬어요.', s:'He', v:'read', o:'her', o2:'a book' }
+    ],
+    themes: {
+      A:['🎁 선물 주기','👨‍👩‍👧 가족 도움','🏫 학교 활동','🍳 음식 만들기','📖 이야기 들려주기','✉️ 편지 보내기','🤝 도와주기','💐 감사 표현','📚 가르치기','🎂 생일 파티'],
+      B:['🎁 선물 주기','👨‍👩‍👧 가족 도움','🍳 음식 만들기','📖 이야기 들려주기','🤝 도와주기'],
+      C:['✏️ 영작 1 — 선물 주기','✏️ 영작 2 — 가르쳐주기','✏️ 영작 3 — 만들어주기','✏️ 영작 4 — 보여주기','✏️ 영작 5 — 마스터'],
+      D:['📝 종합 평가 1','📝 종합 평가 2','📝 종합 평가 3','📝 종합 평가 4','🏆 최종 종합 평가']
+    },
+    instructions: {
+      A:'문장에서 주는 사람(○), 동작(□), 받는 사람(___), 선물(___)을 찾아 표시하세요.',
+      B:'한국어를 보고 4형식 영어 문장을 채워 보세요.',
+      C:'한국어를 보고 4형식 영어 문장을 써 보세요.',
+      D:'세 부분 모두 풀어 보세요.'
+    }
+  },
+  5: {
+    label: '5형식 ___+★',
+    pool: [
+      { en:'They call him Tom.', ko:'그들은 그를 톰이라 불러요.', s:'They', v:'call', o:'him', c:'Tom' },
+      { en:'She made me happy.', ko:'그녀가 나를 행복하게 했어요.', s:'She', v:'made', o:'me', c:'happy' },
+      { en:'I found the book interesting.', ko:'나는 그 책이 재미있다고 느꼈어요.', s:'I', v:'found', o:'the book', c:'interesting' },
+      { en:'We elected him president.', ko:'우리는 그를 회장으로 뽑았어요.', s:'We', v:'elected', o:'him', c:'president' },
+      { en:'He kept the room clean.', ko:'그가 방을 깨끗하게 유지했어요.', s:'He', v:'kept', o:'the room', c:'clean' },
+      { en:'They painted the wall white.', ko:'그들이 벽을 하얗게 칠했어요.', s:'They', v:'painted', o:'the wall', c:'white' },
+      { en:'She named her cat Luna.', ko:'그녀가 고양이를 루나라 이름 지었어요.', s:'She', v:'named', o:'her cat', c:'Luna' },
+      { en:'I consider him honest.', ko:'나는 그를 정직하다고 생각해요.', s:'I', v:'consider', o:'him', c:'honest' },
+      { en:'He left the door open.', ko:'그가 문을 열어둔 채 뒀어요.', s:'He', v:'left', o:'the door', c:'open' },
+      { en:'We found the movie boring.', ko:'우리는 그 영화가 지루하다고 느꼈어요.', s:'We', v:'found', o:'the movie', c:'boring' },
+      { en:'She makes me smile.', ko:'그녀가 나를 웃게 해요.', s:'She', v:'makes', o:'me', c:'smile' },
+      { en:'They chose her leader.', ko:'그들이 그녀를 리더로 뽑았어요.', s:'They', v:'chose', o:'her', c:'leader' },
+      { en:'Mom keeps the house warm.', ko:'엄마가 집을 따뜻하게 해요.', s:'Mom', v:'keeps', o:'the house', c:'warm' },
+      { en:'He turned the light off.', ko:'그가 불을 껐어요.', s:'He', v:'turned', o:'the light', c:'off' },
+      { en:'I think her kind.', ko:'나는 그녀가 친절하다고 생각해요.', s:'I', v:'think', o:'her', c:'kind' },
+      { en:'They made the room dark.', ko:'그들이 방을 어둡게 만들었어요.', s:'They', v:'made', o:'the room', c:'dark' },
+      { en:'She found the test hard.', ko:'그녀는 시험이 어렵다고 느꼈어요.', s:'She', v:'found', o:'the test', c:'hard' },
+      { en:'We call our dog Buddy.', ko:'우리는 개를 버디라고 불러요.', s:'We', v:'call', o:'our dog', c:'Buddy' },
+      { en:'He painted his room blue.', ko:'그가 방을 파란색으로 칠했어요.', s:'He', v:'painted', o:'his room', c:'blue' },
+      { en:'She keeps her desk neat.', ko:'그녀는 책상을 깔끔하게 유지해요.', s:'She', v:'keeps', o:'her desk', c:'neat' },
+      { en:'I found the story funny.', ko:'나는 그 이야기가 웃기다고 느꼈어요.', s:'I', v:'found', o:'the story', c:'funny' },
+      { en:'They named the cat Mimi.', ko:'그들은 고양이를 미미라고 이름 지었어요.', s:'They', v:'named', o:'the cat', c:'Mimi' },
+      { en:'He made her angry.', ko:'그가 그녀를 화나게 했어요.', s:'He', v:'made', o:'her', c:'angry' },
+      { en:'We consider him brave.', ko:'우리는 그가 용감하다고 생각해요.', s:'We', v:'consider', o:'him', c:'brave' },
+      { en:'She left the window open.', ko:'그녀가 창문을 열어둔 채 뒀어요.', s:'She', v:'left', o:'the window', c:'open' },
+      { en:'They elected her captain.', ko:'그들이 그녀를 주장으로 뽑았어요.', s:'They', v:'elected', o:'her', c:'captain' },
+      { en:'I found the puzzle easy.', ko:'나는 퍼즐이 쉽다고 느꼈어요.', s:'I', v:'found', o:'the puzzle', c:'easy' },
+      { en:'He keeps the garden green.', ko:'그가 정원을 푸르게 유지해요.', s:'He', v:'keeps', o:'the garden', c:'green' },
+      { en:'She made me proud.', ko:'그녀가 나를 자랑스럽게 했어요.', s:'She', v:'made', o:'me', c:'proud' },
+      { en:'We call the baby Angel.', ko:'우리는 아기를 엔젤이라고 불러요.', s:'We', v:'call', o:'the baby', c:'Angel' },
+      { en:'They painted the fence white.', ko:'그들이 울타리를 하얗게 칠했어요.', s:'They', v:'painted', o:'the fence', c:'white' },
+      { en:'He found the class boring.', ko:'그는 수업이 지루하다고 느꼈어요.', s:'He', v:'found', o:'the class', c:'boring' },
+      { en:'She named her fish Nemo.', ko:'그녀가 물고기를 니모라고 이름 지었어요.', s:'She', v:'named', o:'her fish', c:'Nemo' },
+      { en:'I made him sad.', ko:'나는 그를 슬프게 했어요.', s:'I', v:'made', o:'him', c:'sad' },
+      { en:'They kept the secret safe.', ko:'그들이 비밀을 안전하게 지켰어요.', s:'They', v:'kept', o:'the secret', c:'safe' },
+      { en:'He left his bag open.', ko:'그가 가방을 열어둔 채 뒀어요.', s:'He', v:'left', o:'his bag', c:'open' },
+      { en:'She considers the plan good.', ko:'그녀는 그 계획이 좋다고 생각해요.', s:'She', v:'considers', o:'the plan', c:'good' },
+      { en:'We found the park beautiful.', ko:'우리는 공원이 아름답다고 느꼈어요.', s:'We', v:'found', o:'the park', c:'beautiful' },
+      { en:'They chose him captain.', ko:'그들이 그를 주장으로 뽑았어요.', s:'They', v:'chose', o:'him', c:'captain' },
+      { en:'I keep my shoes clean.', ko:'나는 신발을 깨끗하게 유지해요.', s:'I', v:'keep', o:'my shoes', c:'clean' },
+      { en:'He made the soup hot.', ko:'그가 수프를 뜨겁게 만들었어요.', s:'He', v:'made', o:'the soup', c:'hot' },
+      { en:'She calls her friend Sunny.', ko:'그녀는 친구를 써니라고 불러요.', s:'She', v:'calls', o:'her friend', c:'Sunny' },
+      { en:'We painted the chair red.', ko:'우리는 의자를 빨간색으로 칠했어요.', s:'We', v:'painted', o:'the chair', c:'red' },
+      { en:'They found the food delicious.', ko:'그들은 음식이 맛있다고 느꼈어요.', s:'They', v:'found', o:'the food', c:'delicious' },
+      { en:'He named his bird Sky.', ko:'그가 새를 스카이라고 이름 지었어요.', s:'He', v:'named', o:'his bird', c:'Sky' },
+      { en:'She made the class fun.', ko:'그녀가 수업을 재미있게 만들었어요.', s:'She', v:'made', o:'the class', c:'fun' },
+      { en:'I left the gate closed.', ko:'나는 문을 닫아둔 채 뒀어요.', s:'I', v:'left', o:'the gate', c:'closed' },
+      { en:'They consider her talented.', ko:'그들은 그녀가 재능 있다고 생각해요.', s:'They', v:'consider', o:'her', c:'talented' },
+      { en:'He kept his promise strong.', ko:'그가 약속을 굳건하게 지켰어요.', s:'He', v:'kept', o:'his promise', c:'strong' },
+      { en:'We call this place home.', ko:'우리는 이곳을 집이라고 불러요.', s:'We', v:'call', o:'this place', c:'home' },
+      { en:'She made the cake sweet.', ko:'그녀가 케이크를 달콤하게 만들었어요.', s:'She', v:'made', o:'the cake', c:'sweet' },
+      { en:'I found the garden peaceful.', ko:'나는 정원이 평화롭다고 느꼈어요.', s:'I', v:'found', o:'the garden', c:'peaceful' },
+      { en:'They painted the boat green.', ko:'그들이 배를 초록색으로 칠했어요.', s:'They', v:'painted', o:'the boat', c:'green' },
+      { en:'He made us excited.', ko:'그가 우리를 신나게 했어요.', s:'He', v:'made', o:'us', c:'excited' },
+      { en:'She keeps the water warm.', ko:'그녀는 물을 따뜻하게 유지해요.', s:'She', v:'keeps', o:'the water', c:'warm' },
+      { en:'We named the team Stars.', ko:'우리는 팀을 스타즈라고 이름 지었어요.', s:'We', v:'named', o:'the team', c:'Stars' },
+      { en:'I consider the idea great.', ko:'나는 그 아이디어가 훌륭하다고 생각해요.', s:'I', v:'consider', o:'the idea', c:'great' },
+      { en:'They found the trip amazing.', ko:'그들은 여행이 놀랍다고 느꼈어요.', s:'They', v:'found', o:'the trip', c:'amazing' },
+      { en:'He left the TV on.', ko:'그가 텔레비전을 켜둔 채 뒀어요.', s:'He', v:'left', o:'the TV', c:'on' },
+      { en:'She made the story short.', ko:'그녀가 이야기를 짧게 만들었어요.', s:'She', v:'made', o:'the story', c:'short' }
+    ],
+    themes: {
+      A:['🪄 변신 마법','😊 감정 바꾸기','🏠 상태 유지하기','🎨 색칠하기','🐾 이름 짓기','🏫 선출하기','💡 생각하기','🎬 평가하기','🚪 상태 표현','🌟 마스터'],
+      B:['🪄 변신 마법','😊 감정 바꾸기','🏠 상태 유지','🎨 색칠하기','🐾 이름 짓기'],
+      C:['✏️ 영작 1 — 변신 마법','✏️ 영작 2 — 감정 표현','✏️ 영작 3 — 상태 유지','✏️ 영작 4 — 평가하기','✏️ 영작 5 — 마스터'],
+      D:['📝 종합 평가 1','📝 종합 평가 2','📝 종합 평가 3','📝 종합 평가 4','🏆 최종 종합 평가']
+    },
+    instructions: {
+      A:'문장에서 ○(주인공), □(동사), ___(대상), ★(변한 모습)을 찾아 표시하세요.',
+      B:'한국어를 보고 5형식 영어 문장을 채워 보세요.',
+      C:'한국어를 보고 5형식 영어 문장을 써 보세요.',
+      D:'세 부분 모두 풀어 보세요.'
+    }
+  },
+  6: {
+    label: '1~5형식 종합',
+    pool: [
+      { en:'Birds fly.', ko:'새들이 날아요.', s:'Birds', v:'fly' },
+      { en:'She is kind.', ko:'그녀는 친절해요.', s:'She', v:'is', c:'kind' },
+      { en:'I like cats.', ko:'나는 고양이를 좋아해요.', s:'I', v:'like', o:'cats' },
+      { en:'He gave me a pen.', ko:'그가 나에게 펜을 줬어요.', s:'He', v:'gave', o:'me', o2:'a pen' },
+      { en:'They call her smart.', ko:'그들은 그녀를 똑똑하다고 불러요.', s:'They', v:'call', o:'her', c:'smart' },
+      { en:'Dogs bark.', ko:'개들이 짖어요.', s:'Dogs', v:'bark' },
+      { en:'The sky is blue.', ko:'하늘이 파래요.', s:'The sky', v:'is', c:'blue' },
+      { en:'We eat lunch.', ko:'우리는 점심을 먹어요.', s:'We', v:'eat', o:'lunch' },
+      { en:'Mom made us cake.', ko:'엄마가 우리에게 케이크를 만들어줬어요.', s:'Mom', v:'made', o:'us', o2:'cake' },
+      { en:'She kept him safe.', ko:'그녀가 그를 안전하게 지켜줬어요.', s:'She', v:'kept', o:'him', c:'safe' },
+      { en:'Rain falls.', ko:'비가 내려요.', s:'Rain', v:'falls' },
+      { en:'He looks happy.', ko:'그는 행복해 보여요.', s:'He', v:'looks', c:'happy' },
+      { en:'She reads books.', ko:'그녀는 책을 읽어요.', s:'She', v:'reads', o:'books' },
+      { en:'I showed them my work.', ko:'나는 그들에게 내 작품을 보여줬어요.', s:'I', v:'showed', o:'them', o2:'my work' },
+      { en:'We found it easy.', ko:'우리는 그것이 쉽다고 느꼈어요.', s:'We', v:'found', o:'it', c:'easy' },
+      { en:'Stars shine.', ko:'별들이 빛나요.', s:'Stars', v:'shine' },
+      { en:'The soup is hot.', ko:'수프가 뜨거워요.', s:'The soup', v:'is', c:'hot' },
+      { en:'He plays piano.', ko:'그는 피아노를 쳐요.', s:'He', v:'plays', o:'piano' },
+      { en:'She told me a joke.', ko:'그녀가 나에게 농담을 해줬어요.', s:'She', v:'told', o:'me', o2:'a joke' },
+      { en:'They named the dog Max.', ko:'그들은 그 개를 맥스라 이름 지었어요.', s:'They', v:'named', o:'the dog', c:'Max' },
+      { en:'Flowers bloom.', ko:'꽃들이 펴요.', s:'Flowers', v:'bloom' },
+      { en:'The cake is sweet.', ko:'케이크가 달아요.', s:'The cake', v:'is', c:'sweet' },
+      { en:'She drinks milk.', ko:'그녀는 우유를 마셔요.', s:'She', v:'drinks', o:'milk' },
+      { en:'He bought her a hat.', ko:'그가 그녀에게 모자를 사줬어요.', s:'He', v:'bought', o:'her', o2:'a hat' },
+      { en:'We found the answer easy.', ko:'우리는 답이 쉽다고 느꼈어요.', s:'We', v:'found', o:'the answer', c:'easy' },
+      { en:'The wind blows.', ko:'바람이 불어요.', s:'The wind', v:'blows' },
+      { en:'My room is warm.', ko:'내 방이 따뜻해요.', s:'My room', v:'is', c:'warm' },
+      { en:'They build a tower.', ko:'그들은 탑을 지어요.', s:'They', v:'build', o:'a tower' },
+      { en:'Mom read me a story.', ko:'엄마가 나에게 이야기를 읽어줬어요.', s:'Mom', v:'read', o:'me', o2:'a story' },
+      { en:'She calls him funny.', ko:'그녀는 그를 재미있다고 불러요.', s:'She', v:'calls', o:'him', c:'funny' },
+      { en:'Babies cry.', ko:'아기들이 울어요.', s:'Babies', v:'cry' },
+      { en:'The water is cool.', ko:'물이 시원해요.', s:'The water', v:'is', c:'cool' },
+      { en:'I write a letter.', ko:'나는 편지를 써요.', s:'I', v:'write', o:'a letter' },
+      { en:'She gave us cookies.', ko:'그녀가 우리에게 쿠키를 줬어요.', s:'She', v:'gave', o:'us', o2:'cookies' },
+      { en:'He painted the wall yellow.', ko:'그가 벽을 노란색으로 칠했어요.', s:'He', v:'painted', o:'the wall', c:'yellow' },
+      { en:'Cats purr.', ko:'고양이들이 가르릉거려요.', s:'Cats', v:'purr' },
+      { en:'The garden is lovely.', ko:'정원이 사랑스러워요.', s:'The garden', v:'is', c:'lovely' },
+      { en:'We eat ice cream.', ko:'우리는 아이스크림을 먹어요.', s:'We', v:'eat', o:'ice cream' },
+      { en:'Dad taught me chess.', ko:'아빠가 나에게 체스를 가르쳐줬어요.', s:'Dad', v:'taught', o:'me', o2:'chess' },
+      { en:'They made the show great.', ko:'그들이 공연을 멋지게 만들었어요.', s:'They', v:'made', o:'the show', c:'great' },
+      { en:'The clock ticks.', ko:'시계가 째깍거려요.', s:'The clock', v:'ticks' },
+      { en:'She seems tired.', ko:'그녀는 피곤해 보여요.', s:'She', v:'seems', c:'tired' },
+      { en:'He draws a picture.', ko:'그는 그림을 그려요.', s:'He', v:'draws', o:'a picture' },
+      { en:'I brought him water.', ko:'나는 그에게 물을 가져다줬어요.', s:'I', v:'brought', o:'him', o2:'water' },
+      { en:'We named the bird Tweet.', ko:'우리는 새를 트윗이라고 이름 지었어요.', s:'We', v:'named', o:'the bird', c:'Tweet' },
+      { en:'Leaves fall.', ko:'잎들이 떨어져요.', s:'Leaves', v:'fall' },
+      { en:'The bread smells good.', ko:'빵에서 좋은 냄새가 나요.', s:'The bread', v:'smells', c:'good' },
+      { en:'She opens the box.', ko:'그녀는 상자를 열어요.', s:'She', v:'opens', o:'the box' },
+      { en:'He sent me a letter.', ko:'그가 나에게 편지를 보냈어요.', s:'He', v:'sent', o:'me', o2:'a letter' },
+      { en:'I keep my room tidy.', ko:'나는 방을 깔끔하게 유지해요.', s:'I', v:'keep', o:'my room', c:'tidy' },
+      { en:'Birds chirp.', ko:'새들이 지저귀어요.', s:'Birds', v:'chirp' },
+      { en:'The movie is exciting.', ko:'영화가 신나요.', s:'The movie', v:'is', c:'exciting' },
+      { en:'They ride bikes.', ko:'그들은 자전거를 타요.', s:'They', v:'ride', o:'bikes' },
+      { en:'She told him a joke.', ko:'그녀가 그에게 농담을 해줬어요.', s:'She', v:'told', o:'him', o2:'a joke' },
+      { en:'He left the door closed.', ko:'그가 문을 닫아둔 채 뒀어요.', s:'He', v:'left', o:'the door', c:'closed' },
+      { en:'Snow falls.', ko:'눈이 내려요.', s:'Snow', v:'falls' },
+      { en:'The tea tastes sweet.', ko:'차가 달콤해요.', s:'The tea', v:'tastes', c:'sweet' },
+      { en:'I wash my hands.', ko:'나는 손을 씻어요.', s:'I', v:'wash', o:'my hands' },
+      { en:'They consider him smart.', ko:'그들은 그가 똑똑하다고 생각해요.', s:'They', v:'consider', o:'him', c:'smart' },
+      { en:'Mom bakes bread.', ko:'엄마가 빵을 구워요.', s:'Mom', v:'bakes', o:'bread' }
+    ],
+    themes: {
+      A:['🌈 형식 찾기 종합','🐾 동물 이야기','👨‍👩‍👧 가족 이야기','🏫 학교 이야기','🍳 음식 이야기','🌳 자연 이야기','🎵 취미 이야기','💡 생각과 감정','🎁 주고받기','🌟 마스터'],
+      B:['🌈 형식 채우기','🐾 동물','👨‍👩‍👧 가족','🏫 학교','🌟 종합'],
+      C:['✏️ 영작 1 — 1형식','✏️ 영작 2 — 2형식','✏️ 영작 3 — 3형식','✏️ 영작 4 — 4형식','✏️ 영작 5 — 5형식'],
+      D:['📝 종합 1','📝 종합 2','📝 종합 3','📝 종합 4','🏆 최종 종합 평가']
+    },
+    instructions: {
+      A:'문장이 몇 형식인지 찾고 캐릭터를 표시하세요.',
+      B:'한국어를 보고 알맞은 형식의 영어 문장을 채워 보세요.',
+      C:'한국어를 보고 영어 문장을 써 보세요.',
+      D:'세 부분 모두 풀어 보세요.'
+    }
+  },
+  7: {
+    label: '대명사',
+    pool: [
+      { en:'He runs fast.', ko:'그는 빨리 달려요.', s:'He', v:'runs' },
+      { en:'She sings well.', ko:'그녀는 노래를 잘해요.', s:'She', v:'sings' },
+      { en:'It is big.', ko:'그것은 커요.', s:'It', v:'is', c:'big' },
+      { en:'They play together.', ko:'그들은 함께 놀아요.', s:'They', v:'play' },
+      { en:'We are friends.', ko:'우리는 친구예요.', s:'We', v:'are', c:'friends' },
+      { en:'I am a student.', ko:'나는 학생이에요.', s:'I', v:'am', c:'a student' },
+      { en:'You are kind.', ko:'너는 친절해요.', s:'You', v:'are', c:'kind' },
+      { en:'He likes music.', ko:'그는 음악을 좋아해요.', s:'He', v:'likes', o:'music' },
+      { en:'She reads a lot.', ko:'그녀는 많이 읽어요.', s:'She', v:'reads' },
+      { en:'They help us.', ko:'그들이 우리를 도와줘요.', s:'They', v:'help', o:'us' },
+      { en:'We love him.', ko:'우리는 그를 사랑해요.', s:'We', v:'love', o:'him' },
+      { en:'It looks nice.', ko:'그것은 멋져 보여요.', s:'It', v:'looks', c:'nice' },
+      { en:'I know her.', ko:'나는 그녀를 알아요.', s:'I', v:'know', o:'her' },
+      { en:'You need them.', ko:'너는 그것들이 필요해요.', s:'You', v:'need', o:'them' },
+      { en:'She gave it to me.', ko:'그녀가 그것을 나에게 줬어요.', s:'She', v:'gave', o:'it to me' },
+      { en:'He eats lunch.', ko:'그는 점심을 먹어요.', s:'He', v:'eats', o:'lunch' },
+      { en:'She is my friend.', ko:'그녀는 내 친구예요.', s:'She', v:'is', c:'my friend' },
+      { en:'It rains a lot.', ko:'비가 많이 와요.', s:'It', v:'rains' },
+      { en:'They study hard.', ko:'그들은 열심히 공부해요.', s:'They', v:'study' },
+      { en:'We play basketball.', ko:'우리는 농구를 해요.', s:'We', v:'play', o:'basketball' },
+      { en:'I see him every day.', ko:'나는 매일 그를 봐요.', s:'I', v:'see', o:'him' },
+      { en:'You sing very well.', ko:'너는 노래를 아주 잘해요.', s:'You', v:'sing' },
+      { en:'He gave her a flower.', ko:'그가 그녀에게 꽃을 줬어요.', s:'He', v:'gave', o:'her', o2:'a flower' },
+      { en:'She told us a secret.', ko:'그녀가 우리에게 비밀을 말해줬어요.', s:'She', v:'told', o:'us', o2:'a secret' },
+      { en:'It is very cold.', ko:'아주 추워요.', s:'It', v:'is', c:'very cold' },
+      { en:'They watch him play.', ko:'그들은 그가 노는 것을 봐요.', s:'They', v:'watch', o:'him' },
+      { en:'We miss her.', ko:'우리는 그녀가 그리워요.', s:'We', v:'miss', o:'her' },
+      { en:'I like them.', ko:'나는 그들을 좋아해요.', s:'I', v:'like', o:'them' },
+      { en:'You look great.', ko:'너 멋져 보여요.', s:'You', v:'look', c:'great' },
+      { en:'He reads to us.', ko:'그가 우리에게 읽어줘요.', s:'He', v:'reads' },
+      { en:'She helps me a lot.', ko:'그녀가 나를 많이 도와줘요.', s:'She', v:'helps', o:'me' },
+      { en:'It tastes good.', ko:'그것은 맛있어요.', s:'It', v:'tastes', c:'good' },
+      { en:'They brought us food.', ko:'그들이 우리에게 음식을 가져왔어요.', s:'They', v:'brought', o:'us', o2:'food' },
+      { en:'We called him.', ko:'우리는 그에게 전화했어요.', s:'We', v:'called', o:'him' },
+      { en:'I showed her my book.', ko:'나는 그녀에게 내 책을 보여줬어요.', s:'I', v:'showed', o:'her', o2:'my book' },
+      { en:'You make me happy.', ko:'너는 나를 행복하게 해줘요.', s:'You', v:'make', o:'me', c:'happy' },
+      { en:'He walks with her.', ko:'그는 그녀와 함께 걸어요.', s:'He', v:'walks' },
+      { en:'She sits next to me.', ko:'그녀는 내 옆에 앉아요.', s:'She', v:'sits' },
+      { en:'It belongs to them.', ko:'그것은 그들의 것이에요.', s:'It', v:'belongs' },
+      { en:'They teach us English.', ko:'그들이 우리에게 영어를 가르쳐요.', s:'They', v:'teach', o:'us', o2:'English' },
+      { en:'We trust him.', ko:'우리는 그를 믿어요.', s:'We', v:'trust', o:'him' },
+      { en:'I write to her.', ko:'나는 그녀에게 편지를 써요.', s:'I', v:'write' },
+      { en:'You helped us a lot.', ko:'너는 우리를 많이 도와줬어요.', s:'You', v:'helped', o:'us' },
+      { en:'He found it funny.', ko:'그는 그것이 웃기다고 느꼈어요.', s:'He', v:'found', o:'it', c:'funny' },
+      { en:'She is taller than me.', ko:'그녀는 나보다 키가 커요.', s:'She', v:'is', c:'taller than me' },
+      { en:'It makes us smile.', ko:'그것은 우리를 웃게 해요.', s:'It', v:'makes', o:'us', c:'smile' },
+      { en:'They invited him to the party.', ko:'그들이 그를 파티에 초대했어요.', s:'They', v:'invited', o:'him' },
+      { en:'We cook for them.', ko:'우리는 그들을 위해 요리해요.', s:'We', v:'cook' },
+      { en:'I drew a picture of her.', ko:'나는 그녀의 그림을 그렸어요.', s:'I', v:'drew', o:'a picture of her' },
+      { en:'You are stronger than him.', ko:'너는 그보다 더 강해요.', s:'You', v:'are', c:'stronger than him' },
+      { en:'He bought us ice cream.', ko:'그가 우리에게 아이스크림을 사줬어요.', s:'He', v:'bought', o:'us', o2:'ice cream' },
+      { en:'She took it from me.', ko:'그녀가 그것을 나에게서 가져갔어요.', s:'She', v:'took', o:'it' },
+      { en:'It follows him everywhere.', ko:'그것은 어디든 그를 따라가요.', s:'It', v:'follows', o:'him' },
+      { en:'They chose her.', ko:'그들이 그녀를 뽑았어요.', s:'They', v:'chose', o:'her' },
+      { en:'We need you.', ko:'우리는 네가 필요해요.', s:'We', v:'need', o:'you' },
+      { en:'I waited for them.', ko:'나는 그들을 기다렸어요.', s:'I', v:'waited' },
+      { en:'He is older than us.', ko:'그는 우리보다 나이가 많아요.', s:'He', v:'is', c:'older than us' },
+      { en:'She sang for him.', ko:'그녀가 그를 위해 노래했어요.', s:'She', v:'sang' },
+      { en:'They asked me a question.', ko:'그들이 나에게 질문을 했어요.', s:'They', v:'asked', o:'me', o2:'a question' },
+      { en:'We gave her a surprise.', ko:'우리가 그녀에게 깜짝 선물을 줬어요.', s:'We', v:'gave', o:'her', o2:'a surprise' }
+    ],
+    themes: {
+      A:['👦 He와 She','👥 We와 They','👤 I와 You','🔄 It 사용법','📖 대명사 찾기','🏫 학교에서','🐾 동물 이야기','👨‍👩‍👧 가족 이야기','💡 목적격 대명사','🌟 마스터'],
+      B:['👦 He/She 채우기','👥 We/They 채우기','🔄 목적격 채우기','📖 대명사 변환','🌟 종합'],
+      C:['✏️ 영작 1','✏️ 영작 2','✏️ 영작 3','✏️ 영작 4','✏️ 영작 5'],
+      D:['📝 종합 1','📝 종합 2','📝 종합 3','📝 종합 4','🏆 최종']
+    },
+    instructions: {
+      A:'문장에서 대명사(He, She, It, They, We, I, You)를 찾아 표시하세요.',
+      B:'알맞은 대명사를 넣어 문장을 완성하세요.',
+      C:'한국어를 보고 대명사를 사용한 영어 문장을 써 보세요.',
+      D:'세 부분 모두 풀어 보세요.'
+    }
+  },
+  8: {
+    label: '명사·관사',
+    pool: [
+      { en:'A cat sits on a chair.', ko:'고양이 한 마리가 의자에 앉아있어요.', s:'A cat', v:'sits', o:'on a chair' },
+      { en:'The sun is bright.', ko:'해가 밝아요.', s:'The sun', v:'is', c:'bright' },
+      { en:'An apple is red.', ko:'사과 하나가 빨개요.', s:'An apple', v:'is', c:'red' },
+      { en:'I see a bird.', ko:'나는 새 한 마리를 봐요.', s:'I', v:'see', o:'a bird' },
+      { en:'The teacher is nice.', ko:'그 선생님은 친절해요.', s:'The teacher', v:'is', c:'nice' },
+      { en:'Dogs are cute.', ko:'개들은 귀여워요.', s:'Dogs', v:'are', c:'cute' },
+      { en:'I have an umbrella.', ko:'나는 우산 하나가 있어요.', s:'I', v:'have', o:'an umbrella' },
+      { en:'The moon shines.', ko:'달이 빛나요.', s:'The moon', v:'shines' },
+      { en:'A boy reads a book.', ko:'소년 한 명이 책을 읽어요.', s:'A boy', v:'reads', o:'a book' },
+      { en:'The flowers are pretty.', ko:'꽃들이 예뻐요.', s:'The flowers', v:'are', c:'pretty' },
+      { en:'I eat an egg.', ko:'나는 달걀을 먹어요.', s:'I', v:'eat', o:'an egg' },
+      { en:'The water is cold.', ko:'물이 차가워요.', s:'The water', v:'is', c:'cold' },
+      { en:'A girl sings.', ko:'소녀 한 명이 노래해요.', s:'A girl', v:'sings' },
+      { en:'Trees are green.', ko:'나무들은 초록이에요.', s:'Trees', v:'are', c:'green' },
+      { en:'The sky is clear.', ko:'하늘이 맑아요.', s:'The sky', v:'is', c:'clear' },
+      { en:'A rabbit hops fast.', ko:'토끼 한 마리가 빨리 뛰어요.', s:'A rabbit', v:'hops' },
+      { en:'The children play outside.', ko:'아이들이 밖에서 놀아요.', s:'The children', v:'play' },
+      { en:'An orange is round.', ko:'오렌지 하나가 둥글어요.', s:'An orange', v:'is', c:'round' },
+      { en:'Books are on the shelf.', ko:'책들이 선반 위에 있어요.', s:'Books', v:'are', o:'on the shelf' },
+      { en:'I have a pencil.', ko:'나는 연필 하나가 있어요.', s:'I', v:'have', o:'a pencil' },
+      { en:'The river is long.', ko:'그 강은 길어요.', s:'The river', v:'is', c:'long' },
+      { en:'A bird sits on a branch.', ko:'새 한 마리가 나뭇가지에 앉아있어요.', s:'A bird', v:'sits', o:'on a branch' },
+      { en:'Cats are playful.', ko:'고양이들은 장난스러워요.', s:'Cats', v:'are', c:'playful' },
+      { en:'The park is big.', ko:'그 공원은 커요.', s:'The park', v:'is', c:'big' },
+      { en:'An elephant is heavy.', ko:'코끼리 한 마리가 무거워요.', s:'An elephant', v:'is', c:'heavy' },
+      { en:'I see the mountain.', ko:'나는 그 산이 보여요.', s:'I', v:'see', o:'the mountain' },
+      { en:'A baby sleeps.', ko:'아기 한 명이 자요.', s:'A baby', v:'sleeps' },
+      { en:'The stars are bright.', ko:'별들이 밝아요.', s:'The stars', v:'are', c:'bright' },
+      { en:'Apples are delicious.', ko:'사과들은 맛있어요.', s:'Apples', v:'are', c:'delicious' },
+      { en:'I found a coin.', ko:'나는 동전 하나를 찾았어요.', s:'I', v:'found', o:'a coin' },
+      { en:'The door is open.', ko:'그 문이 열려있어요.', s:'The door', v:'is', c:'open' },
+      { en:'An ant is tiny.', ko:'개미 한 마리가 아주 작아요.', s:'An ant', v:'is', c:'tiny' },
+      { en:'Lions are strong.', ko:'사자들은 강해요.', s:'Lions', v:'are', c:'strong' },
+      { en:'She has a dog.', ko:'그녀는 개 한 마리가 있어요.', s:'She', v:'has', o:'a dog' },
+      { en:'The bus is here.', ko:'그 버스가 여기 있어요.', s:'The bus', v:'is', c:'here' },
+      { en:'A student reads a book.', ko:'학생 한 명이 책을 읽어요.', s:'A student', v:'reads', o:'a book' },
+      { en:'The clouds are white.', ko:'구름들이 하얘요.', s:'The clouds', v:'are', c:'white' },
+      { en:'Puppies are cute.', ko:'강아지들은 귀여워요.', s:'Puppies', v:'are', c:'cute' },
+      { en:'He drew an airplane.', ko:'그는 비행기 하나를 그렸어요.', s:'He', v:'drew', o:'an airplane' },
+      { en:'The garden has flowers.', ko:'그 정원에 꽃들이 있어요.', s:'The garden', v:'has', o:'flowers' },
+      { en:'A frog jumps high.', ko:'개구리 한 마리가 높이 뛰어요.', s:'A frog', v:'jumps' },
+      { en:'The cake is on the table.', ko:'케이크가 탁자 위에 있어요.', s:'The cake', v:'is', o:'on the table' },
+      { en:'An egg fell down.', ko:'달걀 하나가 떨어졌어요.', s:'An egg', v:'fell' },
+      { en:'Birds are flying.', ko:'새들이 날고 있어요.', s:'Birds', v:'are flying' },
+      { en:'I need a glass of water.', ko:'나는 물 한 잔이 필요해요.', s:'I', v:'need', o:'a glass of water' },
+      { en:'The boat is on the lake.', ko:'보트가 호수 위에 있어요.', s:'The boat', v:'is', o:'on the lake' },
+      { en:'A nurse helps people.', ko:'간호사 한 명이 사람들을 도와요.', s:'A nurse', v:'helps', o:'people' },
+      { en:'The leaves are brown.', ko:'잎들이 갈색이에요.', s:'The leaves', v:'are', c:'brown' },
+      { en:'Cookies are sweet.', ko:'쿠키들은 달아요.', s:'Cookies', v:'are', c:'sweet' },
+      { en:'She bought an ice cream.', ko:'그녀는 아이스크림 하나를 샀어요.', s:'She', v:'bought', o:'an ice cream' },
+      { en:'The window is closed.', ko:'그 창문이 닫혀있어요.', s:'The window', v:'is', c:'closed' },
+      { en:'A piano is big.', ko:'피아노 하나가 커요.', s:'A piano', v:'is', c:'big' },
+      { en:'Flowers need water.', ko:'꽃들은 물이 필요해요.', s:'Flowers', v:'need', o:'water' },
+      { en:'He lost a shoe.', ko:'그는 신발 한 짝을 잃어버렸어요.', s:'He', v:'lost', o:'a shoe' },
+      { en:'The snow is white.', ko:'눈이 하얘요.', s:'The snow', v:'is', c:'white' },
+      { en:'An owl flies at night.', ko:'부엉이 한 마리가 밤에 날아요.', s:'An owl', v:'flies' },
+      { en:'Bananas are yellow.', ko:'바나나들은 노란색이에요.', s:'Bananas', v:'are', c:'yellow' },
+      { en:'I see a rainbow.', ko:'나는 무지개를 봐요.', s:'I', v:'see', o:'a rainbow' },
+      { en:'The table is round.', ko:'그 탁자는 둥글어요.', s:'The table', v:'is', c:'round' },
+      { en:'A farmer grows vegetables.', ko:'농부 한 명이 채소를 길러요.', s:'A farmer', v:'grows', o:'vegetables' }
+    ],
+    themes: {
+      A:['📖 a와 an','📖 the 사용','📖 관사 없는 복수','🐾 동물과 관사','🍎 음식과 관사','🏫 학교와 관사','🌳 자연과 관사','👤 사람과 관사','🏠 집과 관사','🌟 마스터'],
+      B:['📖 a/an 채우기','📖 the 채우기','📖 관사 선택','📖 복수 만들기','🌟 종합'],
+      C:['✏️ 영작 1','✏️ 영작 2','✏️ 영작 3','✏️ 영작 4','✏️ 영작 5'],
+      D:['📝 종합 1','📝 종합 2','📝 종합 3','📝 종합 4','🏆 최종']
+    },
+    instructions: {
+      A:'문장에서 관사(a, an, the)와 명사를 찾아 표시하세요.',
+      B:'알맞은 관사를 넣어 문장을 완성하세요.',
+      C:'한국어를 보고 관사를 포함한 영어 문장을 써 보세요.',
+      D:'세 부분 모두 풀어 보세요.'
+    }
+  },
+  9: {
+    label: '형용사·부사',
+    pool: [
+      { en:'The big dog runs fast.', ko:'큰 개가 빨리 달려요.', s:'The big dog', v:'runs' },
+      { en:'She is very tall.', ko:'그녀는 매우 키가 커요.', s:'She', v:'is', c:'very tall' },
+      { en:'A small cat sleeps quietly.', ko:'작은 고양이가 조용히 자요.', s:'A small cat', v:'sleeps' },
+      { en:'He speaks slowly.', ko:'그는 천천히 말해요.', s:'He', v:'speaks' },
+      { en:'The red flower is beautiful.', ko:'빨간 꽃이 아름다워요.', s:'The red flower', v:'is', c:'beautiful' },
+      { en:'She sings loudly.', ko:'그녀는 크게 노래해요.', s:'She', v:'sings' },
+      { en:'The old tree is very tall.', ko:'오래된 나무가 매우 커요.', s:'The old tree', v:'is', c:'very tall' },
+      { en:'He runs quickly.', ko:'그는 빠르게 달려요.', s:'He', v:'runs' },
+      { en:'A happy child laughs.', ko:'행복한 아이가 웃어요.', s:'A happy child', v:'laughs' },
+      { en:'She writes neatly.', ko:'그녀는 깔끔하게 써요.', s:'She', v:'writes' },
+      { en:'The cold wind blows hard.', ko:'차가운 바람이 세게 불어요.', s:'The cold wind', v:'blows' },
+      { en:'He is really smart.', ko:'그는 정말 똑똑해요.', s:'He', v:'is', c:'really smart' },
+      { en:'A young girl dances gracefully.', ko:'어린 소녀가 우아하게 춤춰요.', s:'A young girl', v:'dances' },
+      { en:'The bright star shines clearly.', ko:'밝은 별이 선명하게 빛나요.', s:'The bright star', v:'shines' },
+      { en:'She always helps kindly.', ko:'그녀는 항상 친절하게 도와요.', s:'She', v:'helps' },
+      { en:'The tall boy jumps high.', ko:'키 큰 소년이 높이 뛰어요.', s:'The tall boy', v:'jumps' },
+      { en:'A tiny ant walks slowly.', ko:'작은 개미가 천천히 걸어요.', s:'A tiny ant', v:'walks' },
+      { en:'She is extremely kind.', ko:'그녀는 극도로 친절해요.', s:'She', v:'is', c:'extremely kind' },
+      { en:'The fast car moves quickly.', ko:'빠른 차가 빠르게 움직여요.', s:'The fast car', v:'moves' },
+      { en:'He eats very slowly.', ko:'그는 아주 천천히 먹어요.', s:'He', v:'eats' },
+      { en:'A white rabbit hops softly.', ko:'하얀 토끼가 살살 뛰어요.', s:'A white rabbit', v:'hops' },
+      { en:'The loud bell rings suddenly.', ko:'시끄러운 종이 갑자기 울려요.', s:'The loud bell', v:'rings' },
+      { en:'She is quite smart.', ko:'그녀는 꽤 똑똑해요.', s:'She', v:'is', c:'quite smart' },
+      { en:'The heavy box falls hard.', ko:'무거운 상자가 세게 떨어져요.', s:'The heavy box', v:'falls' },
+      { en:'He sings beautifully.', ko:'그는 아름답게 노래해요.', s:'He', v:'sings' },
+      { en:'A lazy cat sleeps all day.', ko:'게으른 고양이가 하루 종일 자요.', s:'A lazy cat', v:'sleeps' },
+      { en:'The sweet candy tastes really good.', ko:'달콤한 사탕이 정말 맛있어요.', s:'The sweet candy', v:'tastes', c:'really good' },
+      { en:'She dances very gracefully.', ko:'그녀는 아주 우아하게 춤춰요.', s:'She', v:'dances' },
+      { en:'The new student arrives early.', ko:'새 학생이 일찍 도착해요.', s:'The new student', v:'arrives' },
+      { en:'He plays the piano well.', ko:'그는 피아노를 잘 쳐요.', s:'He', v:'plays' },
+      { en:'A cute puppy barks loudly.', ko:'귀여운 강아지가 크게 짖어요.', s:'A cute puppy', v:'barks' },
+      { en:'The blue ocean is incredibly deep.', ko:'파란 바다가 엄청 깊어요.', s:'The blue ocean', v:'is', c:'incredibly deep' },
+      { en:'She reads the long book carefully.', ko:'그녀는 긴 책을 주의 깊게 읽어요.', s:'She', v:'reads' },
+      { en:'The dark sky looks mysterious.', ko:'어두운 하늘이 신비로워 보여요.', s:'The dark sky', v:'looks', c:'mysterious' },
+      { en:'He walks home quietly.', ko:'그는 조용히 집으로 걸어요.', s:'He', v:'walks' },
+      { en:'A round ball rolls easily.', ko:'둥근 공이 쉽게 굴러가요.', s:'A round ball', v:'rolls' },
+      { en:'The warm soup smells wonderful.', ko:'따뜻한 수프가 멋진 냄새가 나요.', s:'The warm soup', v:'smells', c:'wonderful' },
+      { en:'She studies math hard.', ko:'그녀는 수학을 열심히 공부해요.', s:'She', v:'studies' },
+      { en:'The green grass grows thick.', ko:'초록 풀이 두텁게 자라요.', s:'The green grass', v:'grows' },
+      { en:'He is truly honest.', ko:'그는 정말로 정직해요.', s:'He', v:'is', c:'truly honest' },
+      { en:'A strong wind blows fiercely.', ko:'강한 바람이 세차게 불어요.', s:'A strong wind', v:'blows' },
+      { en:'The soft pillow feels very nice.', ko:'부드러운 베개가 아주 좋아요.', s:'The soft pillow', v:'feels', c:'very nice' },
+      { en:'She runs incredibly fast.', ko:'그녀는 믿을 수 없이 빨리 달려요.', s:'She', v:'runs' },
+      { en:'The short boy sits quietly.', ko:'키 작은 소년이 조용히 앉아요.', s:'The short boy', v:'sits' },
+      { en:'He works very hard.', ko:'그는 매우 열심히 일해요.', s:'He', v:'works' },
+      { en:'A colorful butterfly flies gently.', ko:'알록달록한 나비가 살랑살랑 날아요.', s:'A colorful butterfly', v:'flies' },
+      { en:'The long river flows smoothly.', ko:'긴 강이 부드럽게 흘러요.', s:'The long river', v:'flows' },
+      { en:'She is so brave.', ko:'그녀는 아주 용감해요.', s:'She', v:'is', c:'so brave' },
+      { en:'The clean room looks nice.', ko:'깨끗한 방이 좋아 보여요.', s:'The clean room', v:'looks', c:'nice' },
+      { en:'He answers the question correctly.', ko:'그는 질문에 정확하게 대답해요.', s:'He', v:'answers' },
+      { en:'A bright light shines clearly.', ko:'밝은 빛이 뚜렷하게 빛나요.', s:'A bright light', v:'shines' },
+      { en:'The narrow path looks dangerous.', ko:'좁은 길이 위험해 보여요.', s:'The narrow path', v:'looks', c:'dangerous' },
+      { en:'She speaks English fluently.', ko:'그녀는 영어를 유창하게 말해요.', s:'She', v:'speaks' },
+      { en:'The thick book is really heavy.', ko:'두꺼운 책이 정말 무거워요.', s:'The thick book', v:'is', c:'really heavy' },
+      { en:'He climbs the steep hill bravely.', ko:'그는 가파른 언덕을 용감하게 올라요.', s:'He', v:'climbs' },
+      { en:'A gentle breeze blows softly.', ko:'부드러운 산들바람이 살랑살랑 불어요.', s:'A gentle breeze', v:'blows' },
+      { en:'The hungry dog eats quickly.', ko:'배고픈 개가 빨리 먹어요.', s:'The hungry dog', v:'eats' },
+      { en:'She is always cheerful.', ko:'그녀는 항상 명랑해요.', s:'She', v:'is', c:'always cheerful' },
+      { en:'The fresh bread smells really nice.', ko:'신선한 빵에서 정말 좋은 냄새가 나요.', s:'The fresh bread', v:'smells', c:'really nice' },
+      { en:'The wise owl watches silently.', ko:'지혜로운 부엉이가 조용히 지켜봐요.', s:'The wise owl', v:'watches' }
+    ],
+    themes: {
+      A:['🌈 형용사 찾기','💨 부사 찾기','🐾 동물 묘사','👤 사람 묘사','🌳 자연 묘사','🏠 사물 묘사','😊 감정 표현','🏃 동작 표현','🎨 색깔과 크기','🌟 마스터'],
+      B:['🌈 형용사 채우기','💨 부사 채우기','🐾 묘사 채우기','😊 감정 채우기','🌟 종합'],
+      C:['✏️ 영작 1','✏️ 영작 2','✏️ 영작 3','✏️ 영작 4','✏️ 영작 5'],
+      D:['📝 종합 1','📝 종합 2','📝 종합 3','📝 종합 4','🏆 최종']
+    },
+    instructions: {
+      A:'문장에서 형용사(어떤?)와 부사(어떻게?)를 찾아 표시하세요.',
+      B:'알맞은 형용사·부사를 넣어 문장을 완성하세요.',
+      C:'한국어를 보고 형용사·부사를 포함한 영어 문장을 써 보세요.',
+      D:'세 부분 모두 풀어 보세요.'
+    }
+  },
+  10: {
+    label: 'LEVEL 1 종합',
+    pool: [
+      { en:'Birds fly high.', ko:'새들이 높이 날아요.', s:'Birds', v:'fly' },
+      { en:'She is a good student.', ko:'그녀는 좋은 학생이에요.', s:'She', v:'is', c:'a good student' },
+      { en:'I read many books.', ko:'나는 많은 책을 읽어요.', s:'I', v:'read', o:'many books' },
+      { en:'He gave her a rose.', ko:'그가 그녀에게 장미를 줬어요.', s:'He', v:'gave', o:'her', o2:'a rose' },
+      { en:'They made us proud.', ko:'그들이 우리를 자랑스럽게 했어요.', s:'They', v:'made', o:'us', c:'proud' },
+      { en:'The little cat sleeps softly.', ko:'작은 고양이가 부드럽게 자요.', s:'The little cat', v:'sleeps' },
+      { en:'We are happy.', ko:'우리는 행복해요.', s:'We', v:'are', c:'happy' },
+      { en:'Mom cooks delicious food.', ko:'엄마가 맛있는 음식을 요리해요.', s:'Mom', v:'cooks', o:'delicious food' },
+      { en:'She showed me the way.', ko:'그녀가 나에게 길을 보여줬어요.', s:'She', v:'showed', o:'me', o2:'the way' },
+      { en:'He calls her smart.', ko:'그는 그녀를 똑똑하다고 불러요.', s:'He', v:'calls', o:'her', c:'smart' },
+      { en:'A big elephant walks slowly.', ko:'큰 코끼리가 천천히 걸어요.', s:'A big elephant', v:'walks' },
+      { en:'It is a sunny day.', ko:'화창한 날이에요.', s:'It', v:'is', c:'a sunny day' },
+      { en:'They like sweet candy.', ko:'그들은 달콤한 사탕을 좋아해요.', s:'They', v:'like', o:'sweet candy' },
+      { en:'I told him the truth.', ko:'나는 그에게 사실을 말했어요.', s:'I', v:'told', o:'him', o2:'the truth' },
+      { en:'She keeps the garden clean.', ko:'그녀가 정원을 깨끗하게 유지해요.', s:'She', v:'keeps', o:'the garden', c:'clean' },
+      { en:'The old man smiles.', ko:'그 할아버지가 웃어요.', s:'The old man', v:'smiles' },
+      { en:'You look great today.', ko:'너 오늘 멋져 보여요.', s:'You', v:'look', c:'great today' },
+      { en:'We study hard.', ko:'우리는 열심히 공부해요.', s:'We', v:'study' },
+      { en:'He bought them ice cream.', ko:'그가 그들에게 아이스크림을 사줬어요.', s:'He', v:'bought', o:'them', o2:'ice cream' },
+      { en:'They found the test easy.', ko:'그들은 시험이 쉽다고 느꼈어요.', s:'They', v:'found', o:'the test', c:'easy' },
+      { en:'Frogs croak.', ko:'개구리들이 개굴거려요.', s:'Frogs', v:'croak' },
+      { en:'The milk is fresh.', ko:'우유가 신선해요.', s:'The milk', v:'is', c:'fresh' },
+      { en:'He draws a map.', ko:'그는 지도를 그려요.', s:'He', v:'draws', o:'a map' },
+      { en:'She gave them a hint.', ko:'그녀가 그들에게 힌트를 줬어요.', s:'She', v:'gave', o:'them', o2:'a hint' },
+      { en:'I consider the plan safe.', ko:'나는 그 계획이 안전하다고 생각해요.', s:'I', v:'consider', o:'the plan', c:'safe' },
+      { en:'A tall tree stands there.', ko:'키 큰 나무가 거기 서 있어요.', s:'A tall tree', v:'stands' },
+      { en:'It is an exciting day.', ko:'신나는 날이에요.', s:'It', v:'is', c:'an exciting day' },
+      { en:'She needs an eraser.', ko:'그녀는 지우개가 필요해요.', s:'She', v:'needs', o:'an eraser' },
+      { en:'He told her the answer.', ko:'그가 그녀에게 답을 말해줬어요.', s:'He', v:'told', o:'her', o2:'the answer' },
+      { en:'They keep the class quiet.', ko:'그들이 교실을 조용하게 유지해요.', s:'They', v:'keep', o:'the class', c:'quiet' },
+      { en:'The small bird sings sweetly.', ko:'작은 새가 달콤하게 노래해요.', s:'The small bird', v:'sings' },
+      { en:'He is my best friend.', ko:'그는 내 가장 친한 친구예요.', s:'He', v:'is', c:'my best friend' },
+      { en:'We ride the bus.', ko:'우리는 버스를 타요.', s:'We', v:'ride', o:'the bus' },
+      { en:'Mom showed us photos.', ko:'엄마가 우리에게 사진을 보여줬어요.', s:'Mom', v:'showed', o:'us', o2:'photos' },
+      { en:'She named the doll Rose.', ko:'그녀가 인형을 로즈라고 이름 지었어요.', s:'She', v:'named', o:'the doll', c:'Rose' },
+      { en:'The heavy rain falls hard.', ko:'거센 비가 세게 내려요.', s:'The heavy rain', v:'falls' },
+      { en:'You are very smart.', ko:'너는 아주 똑똑해요.', s:'You', v:'are', c:'very smart' },
+      { en:'I open the window.', ko:'나는 창문을 열어요.', s:'I', v:'open', o:'the window' },
+      { en:'He brought me a present.', ko:'그가 나에게 선물을 가져다줬어요.', s:'He', v:'brought', o:'me', o2:'a present' },
+      { en:'We call the cat Kitty.', ko:'우리는 고양이를 키티라고 불러요.', s:'We', v:'call', o:'the cat', c:'Kitty' },
+      { en:'The gentle wind blows.', ko:'부드러운 바람이 불어요.', s:'The gentle wind', v:'blows' },
+      { en:'She looks beautiful today.', ko:'그녀는 오늘 아름다워 보여요.', s:'She', v:'looks', c:'beautiful today' },
+      { en:'They collect shells.', ko:'그들은 조개를 모아요.', s:'They', v:'collect', o:'shells' },
+      { en:'I lent her my pencil.', ko:'나는 그녀에게 연필을 빌려줬어요.', s:'I', v:'lent', o:'her', o2:'my pencil' },
+      { en:'He made the toy strong.', ko:'그가 장난감을 튼튼하게 만들었어요.', s:'He', v:'made', o:'the toy', c:'strong' },
+      { en:'An old clock ticks loudly.', ko:'오래된 시계가 크게 째깍거려요.', s:'An old clock', v:'ticks' },
+      { en:'They are good students.', ko:'그들은 좋은 학생들이에요.', s:'They', v:'are', c:'good students' },
+      { en:'She picks fresh flowers.', ko:'그녀는 신선한 꽃을 따요.', s:'She', v:'picks', o:'fresh flowers' },
+      { en:'Dad cooked us spaghetti.', ko:'아빠가 우리에게 스파게티를 만들어줬어요.', s:'Dad', v:'cooked', o:'us', o2:'spaghetti' },
+      { en:'I found the song lovely.', ko:'나는 그 노래가 사랑스럽다고 느꼈어요.', s:'I', v:'found', o:'the song', c:'lovely' },
+      { en:'The brave boy runs fast.', ko:'용감한 소년이 빨리 달려요.', s:'The brave boy', v:'runs' },
+      { en:'It smells wonderful.', ko:'그것은 놀라운 냄새가 나요.', s:'It', v:'smells', c:'wonderful' },
+      { en:'We clean the classroom.', ko:'우리는 교실을 청소해요.', s:'We', v:'clean', o:'the classroom' },
+      { en:'She wrote him a thank-you note.', ko:'그녀가 그에게 감사 편지를 써줬어요.', s:'She', v:'wrote', o:'him', o2:'a thank-you note' },
+      { en:'He kept his desk organized.', ko:'그가 책상을 정리된 상태로 유지했어요.', s:'He', v:'kept', o:'his desk', c:'organized' },
+      { en:'A pretty butterfly flies gently.', ko:'예쁜 나비가 살랑살랑 날아요.', s:'A pretty butterfly', v:'flies' },
+      { en:'I am very excited.', ko:'나는 아주 신나요.', s:'I', v:'am', c:'very excited' },
+      { en:'He feeds the hungry cat.', ko:'그는 배고픈 고양이에게 밥을 줘요.', s:'He', v:'feeds', o:'the hungry cat' },
+      { en:'They painted the bench yellow.', ko:'그들이 벤치를 노란색으로 칠했어요.', s:'They', v:'painted', o:'the bench', c:'yellow' },
+      { en:'She teaches us art.', ko:'그녀가 우리에게 미술을 가르쳐요.', s:'She', v:'teaches', o:'us', o2:'art' }
+    ],
+    themes: {
+      A:['🌟 1형식 복습','🌟 2형식 복습','🌟 3형식 복습','🌟 4형식 복습','🌟 5형식 복습','📖 대명사 복습','📖 관사 복습','🌈 형용사·부사 복습','🎯 형식 판별','🏆 최종 마스터'],
+      B:['🌟 1~2형식','🌟 3형식','🌟 4~5형식','📖 품사','🏆 종합'],
+      C:['✏️ 영작 1 — 형식 종합','✏️ 영작 2 — 품사 종합','✏️ 영작 3 — 묘사','✏️ 영작 4 — 주고받기','✏️ 영작 5 — 마스터'],
+      D:['📝 최종 1','📝 최종 2','📝 최종 3','📝 최종 4','🏆 LEVEL 1 인증']
+    },
+    instructions: {
+      A:'문장의 형식을 찾고 캐릭터를 모두 표시하세요.',
+      B:'한국어를 보고 알맞은 영어 문장을 채워 보세요.',
+      C:'한국어를 보고 영어 문장을 써 보세요.',
+      D:'모든 유형을 풀어 보세요.'
+    }
+  }
+};
+
+// 그림 8장면 풀 (P5/P6 공용)
+const SCENES = [
+  { id:'scene-1-sunrise', theme:'🌅 해 뜨는 마을', nouns:['The sun','Birds','The sky','The trees','Morning','Houses','The wind'], verbs:['rises','sing','shines','moves','comes','wakes','blows'], answers:['The sun rises.','Birds sing.','The sky shines.','The trees move.','Morning comes.'], var:'The wind blows., Clouds float., Animals wake.' },
+  { id:'scene-2-puppy', theme:'🐶 공원의 강아지', nouns:['A puppy','A boy','The grass','A ball','The wind','Trees','The sun'], verbs:['runs','plays','barks','jumps','falls','grows','shines'], answers:['A puppy runs.','A boy plays.','The ball rolls.','The grass grows.','The wind blows.'], var:'Dogs bark., Children laugh., The sun shines.' },
+  { id:'scene-3-rain', theme:'🌧 비 오는 거리', nouns:['Rain','People','Cars','Umbrellas','The street','Puddles','The sky'], verbs:['falls','walk','move','open','shines','grows','darkens'], answers:['Rain falls.','People walk.','Cars move.','Umbrellas open.','The sky darkens.'], var:'Puddles grow., Streets shine., Drops fall.' },
+  { id:'scene-4-breakfast', theme:'🍳 아침 식탁', nouns:['The kettle','Bread','Eggs','The clock','Mom','The window','Steam'], verbs:['boils','waits','cooks','ticks','smiles','shines','rises'], answers:['Mom cooks.','The kettle boils.','Steam rises.','The clock ticks.','The window shines.'], var:'Bread waits., Eggs cook., The morning begins.' },
+  { id:'scene-5-autumn', theme:'🍂 가을 운동장', nouns:['Leaves','Children','The wind','The sky','Trees','The ball','Birds'], verbs:['fall','run','blows','changes','sway','rolls','fly'], answers:['Leaves fall.','Children run.','The wind blows.','Trees sway.','The ball rolls.'], var:'Birds fly., The sky changes., Friends laugh.' },
+  { id:'scene-6-night', theme:'🌙 밤하늘 풍경', nouns:['The moon','Stars','The sky','Houses','A cat','The wind','Lights'], verbs:['shines','twinkle','darkens','sleep','sits','blows','glow'], answers:['The moon shines.','Stars twinkle.','The sky darkens.','A cat sits.','Lights glow.'], var:'Houses sleep., The wind blows., The night deepens.' },
+  { id:'scene-7-soccer', theme:'⚽ 운동장에서 노는 친구들', nouns:['Kids','The ball','The sun','Friends','The grass','A bench','Birds'], verbs:['play','rolls','shines','laugh','grows','stands','sing'], answers:['Kids play.','The ball rolls.','Friends laugh.','The sun shines.','Birds sing.'], var:'The grass grows., A bench stands., Children run.' },
+  { id:'scene-8-art', theme:'🎨 미술 시간', nouns:['A child','The brush','Colors','Paper','The teacher','A window','Light'], verbs:['draws','moves','mix','waits','smiles','opens','shines'], answers:['A child draws.','The brush moves.','Colors mix.','The teacher smiles.','Light shines.'], var:'Paper waits., The window opens., Hands work.' }
+];
+
+// ════════════════════════════════════════════════
+// SVG 그림 라이브러리
+// ════════════════════════════════════════════════
+const SCENE_SVG = {
+  'scene-1-sunrise': `<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sky1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#FFE4B0"/><stop offset="1" stop-color="#FAD58A"/></linearGradient></defs><rect width="400" height="160" fill="url(#sky1)"/><rect y="160" width="400" height="60" fill="#7FA088"/><circle cx="200" cy="160" r="42" fill="#E89856"/><path d="M0 160 Q200 130 400 160" stroke="#D4A23C" stroke-width="2" fill="none"/><polygon points="60,160 90,110 120,160" fill="#7BA5C7"/><rect x="80" y="135" width="20" height="25" fill="#3A332C"/><polygon points="140,160 175,95 210,160" fill="#A37650"/><rect x="165" y="125" width="20" height="35" fill="#3A332C"/><polygon points="240,160 275,105 310,160" fill="#7BA5C7"/><rect x="265" y="130" width="20" height="30" fill="#3A332C"/><path d="M50 80 Q60 70 70 80 Q75 70 85 80" stroke="#3A332C" stroke-width="1.5" fill="none"/><path d="M310 70 Q320 60 330 70 Q335 60 345 70" stroke="#3A332C" stroke-width="1.5" fill="none"/></svg>`,
+  'scene-2-puppy': `<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="140" fill="#BFE0D5"/><rect y="140" width="400" height="80" fill="#9BC79A"/><circle cx="60" cy="50" r="22" fill="#FFFAE3"/><ellipse cx="200" cy="170" rx="32" ry="22" fill="#D4A572"/><circle cx="232" cy="155" r="16" fill="#D4A572"/><polygon points="220,142 226,128 232,142" fill="#A37650"/><polygon points="240,142 248,128 252,142" fill="#A37650"/><circle cx="237" cy="155" r="2" fill="#3A332C"/><ellipse cx="246" cy="158" rx="2" ry="1.5" fill="#3A332C"/><circle cx="120" cy="175" r="10" fill="#D97B6E"/><circle cx="120" cy="175" r="6" fill="#FFFCF5"/><line x1="320" y1="60" x2="320" y2="155" stroke="#5A7A65" stroke-width="6"/><circle cx="320" cy="55" r="18" fill="#7FA088"/></svg>`,
+  'scene-3-rain': `<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="220" fill="#A5B5C0"/><rect y="170" width="400" height="50" fill="#5A6A75"/>${Array.from({length:30}).map((_,i)=>{const x=i*14+5;return `<line x1="${x}" y1="${20+(i%5)*10}" x2="${x-4}" y2="${50+(i%5)*10}" stroke="#FFFCF5" stroke-width="1.5"/>`}).join('')}<path d="M100 160 Q100 130 130 130 Q160 130 160 160 Z" fill="#D97B6E"/><line x1="130" y1="160" x2="130" y2="190" stroke="#3A332C" stroke-width="2"/><circle cx="130" cy="195" r="3" fill="#3A332C"/><path d="M250 160 Q250 130 280 130 Q310 130 310 160 Z" fill="#7FA088"/><line x1="280" y1="160" x2="280" y2="190" stroke="#3A332C" stroke-width="2"/><circle cx="280" cy="195" r="3" fill="#3A332C"/></svg>`,
+  'scene-4-breakfast': `<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="120" fill="#FFE4B0"/><rect y="120" width="400" height="100" fill="#C8A861"/><ellipse cx="200" cy="140" rx="60" ry="10" fill="#FFFCF5" stroke="#A37650" stroke-width="2"/><ellipse cx="200" cy="135" rx="55" ry="8" fill="#F5E5C5"/><ellipse cx="180" cy="135" rx="14" ry="10" fill="#FFEEB0"/><ellipse cx="220" cy="135" rx="14" ry="10" fill="#FFEEB0"/><circle cx="180" cy="135" r="4" fill="#FFB84D"/><circle cx="220" cy="135" r="4" fill="#FFB84D"/><rect x="290" y="130" width="40" height="55" fill="#A37650" rx="3"/><ellipse cx="310" cy="155" rx="12" ry="6" fill="#FFFCF5"/><path d="M305 130 Q310 110 305 100" stroke="#FFFCF5" stroke-width="2" fill="none" opacity="0.7"/><path d="M315 130 Q320 110 315 100" stroke="#FFFCF5" stroke-width="2" fill="none" opacity="0.7"/></svg>`,
+  'scene-5-autumn': `<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="140" fill="#F5DCA8"/><rect y="140" width="400" height="80" fill="#C49B5C"/><line x1="80" y1="180" x2="80" y2="60" stroke="#6B4A2A" stroke-width="8"/><circle cx="80" cy="55" r="35" fill="#D97B6E"/><circle cx="105" cy="65" r="22" fill="#E89856"/><circle cx="55" cy="70" r="20" fill="#D4A23C"/><line x1="320" y1="180" x2="320" y2="50" stroke="#6B4A2A" stroke-width="8"/><circle cx="320" cy="50" r="32" fill="#E89856"/><circle cx="345" cy="62" r="20" fill="#D97B6E"/><circle cx="298" cy="62" r="20" fill="#D4A23C"/>${Array.from({length:14}).map((_,i)=>{const x=40+i*25;const y=130+(i%3)*15;const c=['#E89856','#D97B6E','#D4A23C'][i%3];return `<ellipse cx="${x}" cy="${y}" rx="6" ry="4" fill="${c}"/>`}).join('')}</svg>`,
+  'scene-6-night': `<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="sky6" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#1A2A4A"/><stop offset="1" stop-color="#3A4A6A"/></linearGradient></defs><rect width="400" height="170" fill="url(#sky6)"/><rect y="170" width="400" height="50" fill="#2A1A20"/><circle cx="320" cy="55" r="28" fill="#F5E5C5"/><circle cx="312" cy="48" r="22" fill="url(#sky6)"/>${Array.from({length:18}).map((_,i)=>{const cx=15+i*23;const cy=15+(i*37)%80;const r=1.5+i%3*0.6;return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#FFFCF5"/>`}).join('')}<polygon points="40,170 40,120 80,90 120,120 120,170" fill="#2A1A20"/><rect x="55" y="135" width="12" height="14" fill="#FFE4B0"/><rect x="90" y="140" width="12" height="14" fill="#FFE4B0"/><polygon points="160,170 160,110 200,80 240,110 240,170" fill="#3A2A30"/><rect x="180" y="125" width="14" height="16" fill="#FFE4B0"/></svg>`,
+  'scene-7-soccer': `<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="80" fill="#BFE0D5"/><rect y="80" width="400" height="140" fill="#7FA088"/><circle cx="350" cy="50" r="22" fill="#FFE4B0"/><circle cx="120" cy="150" r="22" fill="#FFFAE3"/><polygon points="120,135 130,150 120,165 110,150" fill="#3A332C"/><circle cx="60" cy="130" r="10" fill="#FFFAE3"/><rect x="55" y="140" width="10" height="20" fill="#D97B6E"/><circle cx="220" cy="135" r="10" fill="#FFFAE3"/><rect x="215" y="145" width="10" height="20" fill="#7FA088"/><circle cx="300" cy="135" r="10" fill="#FFFAE3"/><rect x="295" y="145" width="10" height="20" fill="#5BA89C"/></svg>`,
+  'scene-8-art': `<svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="220" fill="#FAF5EC"/><rect x="50" y="40" width="170" height="120" fill="#FFFCF5" stroke="#A37650" stroke-width="3"/><circle cx="100" cy="90" r="20" fill="#E89856"/><rect x="130" y="80" width="30" height="50" fill="#5BA89C"/><polygon points="170,130 180,80 190,130" fill="#D97B6E"/><circle cx="290" cy="130" r="14" fill="#FFFAE3"/><rect x="284" y="142" width="12" height="25" fill="#D4A23C"/><rect x="335" y="60" width="40" height="80" fill="#C8A861" stroke="#A37650" stroke-width="2"/><circle cx="345" cy="75" r="5" fill="#D97B6E"/><circle cx="365" cy="75" r="5" fill="#5BA89C"/><circle cx="345" cy="95" r="5" fill="#D4A23C"/><circle cx="365" cy="95" r="5" fill="#7FA088"/></svg>`
+};
+function sceneSVG(name) { return SCENE_SVG[name] || SCENE_SVG['scene-1-sunrise']; }
+
+// ════════════════════════════════════════════════
+// 헬퍼
+// ════════════════════════════════════════════════
+function esc(s) { if (s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function shuffleArray(a) { for (let i=a.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function pickN(arr,n) { const c=arr.slice(); shuffleArray(c); if (c.length>=n) return c.slice(0,n); const out=c.slice(); while (out.length<n) { const m=arr.slice(); shuffleArray(m); out.push(...m.slice(0,n-out.length)); } return out; }
+function makeBank(items) {
+  const subs = shuffleArray([...new Set(items.map(p=>p.s))]);
+  const vbs = shuffleArray([...new Set(items.map(p=>p.v))]);
+  const groups = [subs.join(' · '), vbs.join(' · ')];
+  if (items[0] && items[0].c !== undefined && items[0].c !== null) {
+    const cs = shuffleArray([...new Set(items.map(p=>p.c).filter(Boolean))]);
+    if (cs.length) groups.push(cs.join(' · '));
+  }
+  return groups.join(' / ');
+}
+function shuffleStringList(arr) { return shuffleArray(arr.slice()).join(' · '); }
+function markSV(sentence) {
+  const words=String(sentence||'').split(' ');
+  if (words.length<2) return esc(sentence||'');
+  let e=1;
+  const det=['My','The','A','An','Our','Their','His','Her','Big','Little','Wild','Small','Pretty','Spring','Cold','Tall','Old','Young','Many','Some'];
+  if (det.includes(words[0]) && words.length>2) e=2;
+  const subj=words.slice(0,e).join(' '), verb=words[e]||'', rest=words.slice(e+1).join(' ');
+  return `<span class="ans-s">${esc(subj)}</span> <span class="ans-v">${esc(verb)}</span> ${esc(rest)}`;
+}
+
+// ════════════════════════════════════════════════
+// State
+// ════════════════════════════════════════════════
+let state = null;
+
+// ════════════════════════════════════════════════
+// 출제 (셔플 기반)
+// ════════════════════════════════════════════════
+function shuffleScene(scene) {
+  return {
+    no: 0,
+    theme: scene.theme,
+    scene: scene.id,
+    nouns: shuffleStringList(scene.nouns),
+    verbs: shuffleStringList(scene.verbs),
+    model_answer: pickN(scene.answers, 5),
+    variations: scene.var
+  };
+}
+
+function shuffleFromPool(v) {
+  const pool = VOLUME_POOLS[v];
+  const meta = VOLUME_CURRICULUM[v];
+  if (!meta) return null;
+  const usePool = pool || VOLUME_POOLS[1]; // 임시 폴백
+  const isFallback = !pool;
+
+  const result = {
+    meta: {
+      volume: String(v).padStart(2,'0'),
+      title: meta.title,
+      subtitle: meta.subtitle,
+      description: meta.desc,
+      level: meta.level,
+      structure: meta.structure,
+      metaMark: meta.chars.map(id=>CHARS.find(c=>c.id===id)).filter(Boolean).map(c=>c.mark).join('+'),
+      characters: meta.chars.slice()
+    },
+    cheer: {
+      A: `${meta.structure} 구조를 잘 찾았네요!`,
+      B: '빈칸을 잘 채웠어요!',
+      C: '직접 영어 문장을 만들었어요!',
+      D: `여기까지 온 당신, ${meta.title} 마스터로 한 걸음 더!`
+    },
+    isFallback: isFallback,
+    A:[], B:[], C:[], D:[], P5:[], P6:[]
+  };
+  const sentences = usePool.pool;
+
+  // A: 10 × 6 = 60 (CLAUDE.md 표준)
+  const aPicks = pickN(sentences, 60);
+  for (let i=0; i<10; i++) {
+    const ch = aPicks.slice(i*6, i*6+6);
+    result.A.push({
+      no:i+1,
+      theme: usePool.themes.A[i] || `테마 ${i+1}`,
+      sub: `Find the Subject and Verb ${i+1}`,
+      instruction: usePool.instructions.A,
+      items: ch.map(s=>s.en)
+    });
+  }
+  // B: 5 × 6
+  const bPicks = pickN(sentences, 30);
+  for (let i=0; i<5; i++) {
+    const ch = bPicks.slice(i*6, i*6+6);
+    result.B.push({
+      no:i+1,
+      theme: usePool.themes.B[i],
+      sub: `Fill-in Practice ${i+1}`,
+      instruction: usePool.instructions.B,
+      ko: ch.map(s=>s.ko),
+      bank: makeBank(ch),
+      model_answer: ch.map(s=>s.en)
+    });
+  }
+  // C: 5 × 5
+  const cPicks = pickN(sentences, 25);
+  for (let i=0; i<5; i++) {
+    const ch = cPicks.slice(i*5, i*5+5);
+    result.C.push({
+      no:i+1,
+      theme: usePool.themes.C[i],
+      sub: `Writing Practice · Stage ${i+1}`,
+      instruction: usePool.instructions.C,
+      ko: ch.map(s=>s.ko),
+      bank: makeBank(ch),
+      bonus: ['자유 문장 1: 오늘 본 풍경을 영어로.','자유 문장 2: 좋아하는 것을 영어로.'],
+      model_answer: ch.map(s=>s.en)
+    });
+  }
+  // D: 5 × 9
+  const dPicks = pickN(sentences, 45);
+  for (let i=0; i<5; i++) {
+    const base=i*9;
+    const p1=dPicks.slice(base, base+3), p2=dPicks.slice(base+3, base+6), p3=dPicks.slice(base+6, base+9);
+    result.D.push({
+      no:i+1,
+      theme: usePool.themes.D[i],
+      sub: `Mini Test ${i+1}`,
+      instruction: usePool.instructions.D,
+      part1: p1.map(s=>s.en),
+      part2_ko: p2.map(s=>s.ko),
+      part2_bank: makeBank(p2),
+      part2_answers: p2.map(s=>s.en),
+      part3_ko: p3.map(s=>s.ko),
+      part3_bank: makeBank(p3),
+      part3_answers: p3.map(s=>s.en)
+    });
+  }
+  // P5: 8장면 셔플
+  result.P5 = SCENES.map((sc,i) => { const s=shuffleScene(sc); s.no=i+1; return s; });
+  // P6
+  const p6scene = SCENES[Math.floor(Math.random()*SCENES.length)];
+  const p6 = shuffleScene(p6scene);
+  p6.theme = `🏆 Vol. ${result.meta.volume} 단위 테스트`;
+  p6.free_prompt = `오늘 한 장면을 ${meta.structure} 3문장으로 자유롭게 작성하세요.`;
+  result.P6 = [p6];
+  return result;
+}
+
+// ════════════════════════════════════════════════
+// UI: 권 그리드 + 미리보기
+// ════════════════════════════════════════════════
+function renderVolumes() {
+  const wrap = document.getElementById('volumes');
+  const levels = [
+    { lv:1, label:'🟠 LEVEL 1 · 한 문장으로 그림 묘사하기', range:[1,10] },
+    { lv:2, label:'🔴 LEVEL 2 · 한 문장에 살 붙이기', range:[11,20] },
+    { lv:3, label:'🟡 LEVEL 3 · 문장을 길게 연결하기', range:[21,30] },
+    { lv:4, label:'🟢 LEVEL 4 · 단락 쓰기', range:[31,40] },
+    { lv:5, label:'🔵 LEVEL 5 · 에세이 쓰기', range:[41,50] }
+  ];
+  wrap.innerHTML = levels.map(L => {
+    let cards = '';
+    for (let v=L.range[0]; v<=L.range[1]; v++) {
+      const meta = VOLUME_CURRICULUM[v];
+      const hasPool = !!VOLUME_POOLS[v];
+      cards += `<div class="vol-card ${hasPool?'has-pool':''}" data-v="${v}">
+        <span class="vol-pool">${hasPool ? VOLUME_POOLS[v].pool.length+'문장' : '준비중'}</span>
+        <div class="vol-num">${String(v).padStart(2,'0')}</div>
+        <div class="vol-title">${esc(meta.title)}</div>
+      </div>`;
+    }
+    return `<div class="level-block">
+      <div class="level-title lv${L.lv}">${L.label}</div>
+      <div class="vol-grid">${cards}</div>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.vol-card').forEach(card => {
+    card.addEventListener('click', () => applyVolume(parseInt(card.dataset.v)));
+  });
+}
+
+function applyVolume(v) {
+  state = shuffleFromPool(v);
+  if (!state) { toast('해당 권을 찾을 수 없습니다', 'error'); return; }
+  document.querySelectorAll('.vol-card').forEach(c => c.classList.toggle('active', parseInt(c.dataset.v)===v));
+  renderCurrent();
+  if (typeof renderThumbs === 'function') renderThumbs();
+  autosave();
+  toast(`Vol. ${state.meta.volume} 「${state.meta.title}」 출제 완료`, 'success');
+}
+
+function renderCurrent() {
+  const el = document.getElementById('current');
+  if (!state) { el.textContent = '— 권을 선택해 주세요 —'; return; }
+  const m = state.meta;
+  const chars = m.characters.map(id => CHARS.find(c=>c.id===id)).filter(Boolean);
+  el.innerHTML = `
+    <div class="pv-meta-title">Vol. ${m.volume} · ${esc(m.title)}</div>
+    <div class="pv-meta-sub">${esc(m.subtitle)}</div>
+    ${state.isFallback ? '<div class="pv-warn">전용 풀이 아직 준비되지 않아 Vol.01 풀로 임시 출제했습니다. 메타·캐릭터는 정확합니다.</div>' : '<div class="pv-ok">전용 풀로 출제되었습니다.</div>'}
+    <div style="height:10px"></div>
+    <div class="pv-row"><span class="k">레벨</span><span class="v">LEVEL ${m.level}</span></div>
+    <div class="pv-row"><span class="k">구조</span><span class="v">${esc(m.structure)}</span></div>
+    <div class="pv-row"><span class="k">헤더 마크</span><span class="v">${esc(m.metaMark)}</span></div>
+    <div class="pv-chars">${chars.map(c=>`<span class="pv-char-chip" style="border-color:${c.color}"><span class="pv-char-mark" style="color:${c.color}">${c.mark}</span> ${c.name}</span>`).join('')}</div>
+    <div style="height:12px"></div>
+    <div class="section-strip">
+      <span class="chip cA">A ${state.A.length}장</span>
+      <span class="chip cB">B ${state.B.length}장</span>
+      <span class="chip cC">C ${state.C.length}장</span>
+      <span class="chip cD">D ${state.D.length}장</span>
+      <span class="chip cP5">P5 ${state.P5.length}장</span>
+      <span class="chip cP6">P6 ${state.P6.length}장</span>
+    </div>`;
+  renderEditPanel();
+}
+
+function renderEditPanel() {
+  const el = document.getElementById('editPanel');
+  if (!state) { el.innerHTML = ''; return; }
+  const m = state.meta;
+  el.innerHTML = `
+    <label class="ed-label">제목 (커버에 크게)</label>
+    <input class="ed-input" data-edit="meta.title" value="${esc(m.title)}">
+    <label class="ed-label">부제 (영문)</label>
+    <input class="ed-input" data-edit="meta.subtitle" value="${esc(m.subtitle)}">
+    <label class="ed-label">표지 설명</label>
+    <textarea class="ed-input" data-edit="meta.description" rows="2">${esc(m.description)}</textarea>
+    <label class="ed-label">구조 (헤더 표시)</label>
+    <input class="ed-input" data-edit="meta.structure" value="${esc(m.structure)}">
+    <label class="ed-label">응원 A (○ □ 표시 양식)</label>
+    <input class="ed-input" data-edit="cheer.A" value="${esc(state.cheer.A)}">
+    <label class="ed-label">응원 B (빈칸 양식)</label>
+    <input class="ed-input" data-edit="cheer.B" value="${esc(state.cheer.B)}">
+    <label class="ed-label">응원 C (영작 양식)</label>
+    <input class="ed-input" data-edit="cheer.C" value="${esc(state.cheer.C)}">
+    <label class="ed-label">응원 D (종합 평가)</label>
+    <input class="ed-input" data-edit="cheer.D" value="${esc(state.cheer.D)}">`;
+  el.querySelectorAll('[data-edit]').forEach(input => {
+    input.addEventListener('input', e => {
+      const path = e.target.dataset.edit.split('.');
+      let cur = state;
+      for (let i=0; i<path.length-1; i++) cur = cur[path[i]];
+      cur[path[path.length-1]] = e.target.value;
+      autosave();
+    });
+  });
+}
+
+// ════════════════════════════════════════════════
+// 워크시트 편집 모달
+// ════════════════════════════════════════════════
+let currentEditTab = 'A';
+function openWsEditor() {
+  if (!state) { toast('먼저 권을 선택해 주세요', 'error'); return; }
+  document.getElementById('wsModal').classList.add('show');
+  renderWsTabs();
+  renderWsBody();
+}
+function closeWsEditor() { document.getElementById('wsModal').classList.remove('show'); }
+function renderWsTabs() {
+  const tabs = ['A','B','C','D','P5','P6'];
+  const counts = {A:'10장',B:'5장',C:'5장',D:'5장',P5:'8장',P6:'1장'};
+  document.getElementById('wsTabs').innerHTML = tabs.map(t => `<div class="ws-tab ${t===currentEditTab?'active':''}" data-tab="${t}">${t} · ${counts[t]}</div>`).join('');
+  document.querySelectorAll('#wsTabs .ws-tab').forEach(el => {
+    el.addEventListener('click', () => { currentEditTab = el.dataset.tab; renderWsTabs(); renderWsBody(); });
+  });
+}
+function renderWsBody() {
+  const t = currentEditTab;
+  const slots = state[t];
+  const body = document.getElementById('wsBody');
+  body.innerHTML = slots.map((s, idx) => `<div class="ws-slot-card" data-tab="${t}" data-idx="${idx}">
+    <div class="ws-slot-head"><span class="ws-slot-no">${t} · ${t==='P6'?'TEST':'No.'+(idx+1)}</span><small style="color:var(--ink-soft)">${idx+1} / ${slots.length}</small></div>
+    ${renderWsSlotEditor(t, s)}
+  </div>`).join('');
+  body.querySelectorAll('[data-field]').forEach(input => {
+    input.addEventListener('input', e => {
+      const card = e.target.closest('.ws-slot-card');
+      const tab = card.dataset.tab;
+      const idx = parseInt(card.dataset.idx);
+      const field = e.target.dataset.field;
+      const subIdx = e.target.dataset.subidx !== undefined ? parseInt(e.target.dataset.subidx) : null;
+      const slot = state[tab][idx];
+      if (subIdx !== null) {
+        if (!slot[field]) slot[field] = [];
+        slot[field][subIdx] = e.target.value;
+      } else {
+        slot[field] = e.target.value;
+      }
+      autosave();
+    });
+  });
+}
+function renderWsSlotEditor(t, s) {
+  const I = (label, field, val) => `<label class="ed-label">${label}</label><input class="ed-input" data-field="${field}" value="${esc(val||'')}">`;
+  const T = (label, field, val) => `<label class="ed-label">${label}</label><textarea class="ed-input" data-field="${field}" rows="2">${esc(val||'')}</textarea>`;
+  const arr = (label, field, list) => `<label class="ed-label">${label}</label>${(list||[]).map((v,i)=>`<input class="ed-input" data-field="${field}" data-subidx="${i}" value="${esc(v||'')}" style="margin-bottom:4px">`).join('')}`;
+  if (t === 'A') return `${I('테마','theme',s.theme)}${I('부제','sub',s.sub)}${I('인스트럭션','instruction',s.instruction)}${arr('영어 문장 6개','items',s.items)}`;
+  if (t === 'B') return `${I('테마','theme',s.theme)}${I('부제','sub',s.sub)}${I('인스트럭션','instruction',s.instruction)}${arr('한국어 6개','ko',s.ko)}${I('Word Bank','bank',s.bank)}${arr('모범 답안 (영어 6개)','model_answer',s.model_answer)}`;
+  if (t === 'C') return `${I('테마','theme',s.theme)}${I('부제','sub',s.sub)}${I('인스트럭션','instruction',s.instruction)}${arr('한국어 5개','ko',s.ko)}${I('Word Bank','bank',s.bank)}${arr('모범 답안 (영어 5개)','model_answer',s.model_answer)}${arr('보너스 자유 문장 2개','bonus',s.bonus)}`;
+  if (t === 'D') return `${I('테마','theme',s.theme)}${I('부제','sub',s.sub)}${I('인스트럭션','instruction',s.instruction)}${arr('Part 1 · 영어 3','part1',s.part1)}${arr('Part 2 · 한국어 3','part2_ko',s.part2_ko)}${I('Part 2 Word Bank','part2_bank',s.part2_bank)}${arr('Part 2 답안 3','part2_answers',s.part2_answers)}${arr('Part 3 · 한국어 3','part3_ko',s.part3_ko)}${I('Part 3 Word Bank','part3_bank',s.part3_bank)}${arr('Part 3 답안 3','part3_answers',s.part3_answers)}`;
+  if (t === 'P5') return `${I('그림 테마','theme',s.theme)}${I('Scene ID','scene',s.scene)}${I('Word Bank · NOUNS','nouns',s.nouns)}${I('Word Bank · VERBS','verbs',s.verbs)}${arr('모범 답안 5문장','model_answer',s.model_answer)}${I('변형 가능 답안','variations',s.variations)}`;
+  if (t === 'P6') return `${I('테스트 제목','theme',s.theme)}${I('Scene ID','scene',s.scene)}${I('Word Bank · NOUNS','nouns',s.nouns)}${I('Word Bank · VERBS','verbs',s.verbs)}${arr('모범 답안 5문장','model_answer',s.model_answer)}${I('자유 영작 주제','free_prompt',s.free_prompt)}`;
+  return '';
+}
+
+// ════════════════════════════════════════════════
+// 자동 저장
+// ════════════════════════════════════════════════
+let saveT=null;
+function autosave() { clearTimeout(saveT); saveT=setTimeout(()=>{ try { localStorage.setItem('epl-issuer-state', JSON.stringify(state)); } catch(e){} }, 400); }
+function loadAutosave() {
+  try {
+    const raw = localStorage.getItem('epl-issuer-state');
+    if (raw) { state = JSON.parse(raw); return true; }
+  } catch(e) {}
+  return false;
+}
+
+// ════════════════════════════════════════════════
+// 워크북 HTML 생성
+// ════════════════════════════════════════════════
+function generateWorkbookHTML(s) {
+  const chars = s.meta.characters.map(id => CHARS.find(c=>c.id===id)).filter(Boolean);
+  const charMini = chars.map(c=>`<span class="char-mini" style="background:${c.color}20;border-color:${c.color}">${c.mark}</span>`).join('<span class="plus">+</span>');
+  const coverChars = chars.map(c=>`<div class="cover-char" style="border-color:${c.color}">${c.mark}</div>`).join('');
+  let ws='', no=1;
+  s.A.forEach(w => { ws += renderWsA(w, no++, s, charMini); });
+  s.B.forEach(w => { ws += renderWsB(w, no++, s, charMini); });
+  s.C.forEach(w => { ws += renderWsC(w, no++, s, charMini); });
+  s.D.forEach(w => { ws += renderWsD(w, no++, s, charMini); });
+  s.P5.forEach(w => { ws += renderWsP5(w, no++, s, charMini); });
+  s.P6.forEach(w => { ws += renderWsP6(w, no++, s, charMini); });
+  let ak = renderAkCover();
+  let akN = 1;
+  s.A.forEach(w => ak += renderAkA(w, akN++));
+  s.B.forEach(w => ak += renderAkB(w, akN++));
+  s.C.forEach(w => ak += renderAkC(w, akN++));
+  s.D.forEach(w => ak += renderAkD(w, akN++));
+  s.P5.forEach(w => ak += renderAkP5(w, akN++));
+  s.P6.forEach(w => ak += renderAkP6(w, akN++));
+  return MASTER_TEMPLATE
+    .split('##TITLE##').join(esc(s.meta.title))
+    .split('##SUBTITLE##').join(esc(s.meta.subtitle))
+    .split('##VOLUME##').join(esc(s.meta.volume))
+    .split('##DESCRIPTION##').join(esc(s.meta.description))
+    .split('##COVER_CHARS##').join(coverChars)
+    .split('##WORKSHEETS##').join(ws)
+    .split('##ANSWER_KEYS##').join(ak);
+}
+
+function renderWsA(w, no, s, ch) {
+  const num=String(no).padStart(3,'0');
+  return `<section class="ws form-A">
+    <div class="ws-header"><div class="ws-badge" style="background:var(--c-A)">A</div>
+      <div class="ws-title"><div class="ws-no">WS-${num} · ${esc(s.meta.title)}</div><h2>${esc(w.theme)}</h2><div class="ws-sub">${esc(w.sub)}</div></div>
+      <div class="ws-meta">${esc(s.meta.metaMark)}<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <div class="ws-instruction">${ch}<span class="instr-text">${esc(w.instruction)}</span></div>
+      <ol class="ws-list">${w.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ol>
+      <div class="ws-cheer">${ch}<span>"${esc(s.cheer.A)}"</span></div>
+      <div class="epl-stamp">— EPL영어학원 —</div>
+    </div></section>`;
+}
+function renderWsB(w, no, s, ch) {
+  const num=String(no).padStart(3,'0');
+  return `<section class="ws form-B">
+    <div class="ws-header"><div class="ws-badge" style="background:var(--c-B)">B</div>
+      <div class="ws-title"><div class="ws-no">WS-${num} · ${esc(s.meta.title)}</div><h2>${esc(w.theme)}</h2><div class="ws-sub">${esc(w.sub)}</div></div>
+      <div class="ws-meta">${esc(s.meta.metaMark)}<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <div class="ws-instruction">${ch}<span class="instr-text">${esc(w.instruction)}</span></div>
+      <ol class="ws-list">${w.ko.map(k=>`<li><span class="ko">${esc(k)}</span> → <span class="blank"></span> <span class="blank"></span></li>`).join('')}</ol>
+      <div class="word-bank"><strong>WORD BANK</strong> ${esc(w.bank)}</div>
+      <div class="ws-cheer">${ch}<span>"${esc(s.cheer.B)}"</span></div>
+      <div class="epl-stamp">— EPL영어학원 —</div>
+    </div></section>`;
+}
+function renderWsC(w, no, s, ch) {
+  const num=String(no).padStart(3,'0');
+  return `<section class="ws form-C">
+    <div class="ws-header"><div class="ws-badge" style="background:var(--c-C)">C</div>
+      <div class="ws-title"><div class="ws-no">WS-${num} · ${esc(s.meta.title)}</div><h2>${esc(w.theme)}</h2><div class="ws-sub">${esc(w.sub)}</div></div>
+      <div class="ws-meta">${esc(s.meta.metaMark)}<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <div class="ws-instruction">${ch}<span class="instr-text">${esc(w.instruction)}</span></div>
+      <div class="word-bank wb-top"><strong>WORD BANK</strong> ${esc(w.bank)}</div>
+      <ol class="ws-list ws-write">${w.ko.map(k=>`<li><span class="ko-write">${esc(k)}</span><span class="write-box"></span></li>`).join('')}</ol>
+      <div class="bonus-block"><div class="bonus-title">✨ Bonus · 나만의 문장</div>
+        ${w.bonus.map(b=>`<div class="bonus-item"><span class="bonus-ko">${esc(b)}</span><span class="write-box"></span></div>`).join('')}</div>
+      <div class="ws-cheer">${ch}<span>"${esc(s.cheer.C)}"</span></div>
+      <div class="epl-stamp">— EPL영어학원 —</div>
+    </div></section>`;
+}
+function renderWsD(w, no, s, ch) {
+  const num=String(no).padStart(3,'0');
+  return `<section class="ws form-D">
+    <div class="ws-header"><div class="ws-badge" style="background:var(--c-D)">D</div>
+      <div class="ws-title"><div class="ws-no">WS-${num} · ${esc(s.meta.title)}</div><h2>${esc(w.theme)}</h2><div class="ws-sub">${esc(w.sub)}</div></div>
+      <div class="ws-meta">${esc(s.meta.metaMark)}<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <div class="ws-instruction">${ch}<span class="instr-text">${esc(w.instruction)}</span></div>
+      <div class="mini-section"><div class="mini-title">Part 1 · ${esc(s.meta.metaMark)} 표시 (3문제)</div>
+        <ol class="ws-list">${w.part1.map(p=>`<li>${esc(p)}</li>`).join('')}</ol></div>
+      <div class="mini-section"><div class="mini-title">Part 2 · 빈칸 (3문제)</div>
+        <div class="word-bank" style="margin:6px 0"><strong>WORD BANK</strong> ${esc(w.part2_bank)}</div>
+        <ol class="ws-list">${w.part2_ko.map(k=>`<li><span class="ko">${esc(k)}</span> → <span class="blank"></span> <span class="blank"></span></li>`).join('')}</ol></div>
+      <div class="mini-section"><div class="mini-title">Part 3 · 영작 (3문제)</div>
+        <div class="word-bank" style="margin:6px 0"><strong>WORD BANK</strong> ${esc(w.part3_bank)}</div>
+        <ol class="ws-list ws-write">${w.part3_ko.map(k=>`<li><span class="ko-write">${esc(k)}</span><span class="write-box"></span></li>`).join('')}</ol></div>
+      <div class="ws-cheer">${ch}<span>"${esc(s.cheer.D)}"</span></div>
+      <div class="epl-stamp">— EPL영어학원 —</div>
+    </div></section>`;
+}
+function renderWsP5(w, no, s, ch) {
+  const num=String(no).padStart(3,'0');
+  return `<section class="ws form-P5">
+    <div class="ws-header"><div class="ws-badge" style="background:var(--c-P5)">P5</div>
+      <div class="ws-title"><div class="ws-no">WS-${num} · ${esc(s.meta.title)}</div><h2>${esc(w.theme)}</h2><div class="ws-sub">Picture Writing</div></div>
+      <div class="ws-meta">${esc(s.meta.metaMark)}<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <div class="ws-instruction">${ch}<span class="instr-text">그림을 보고 Word Bank를 활용해 ${esc(s.meta.metaMark)} 문장 5개를 써 보세요.</span></div>
+      <div class="picture-area">${w.image_data ? `<img src="${w.image_data}" alt="${esc(w.theme)}">` : sceneSVG(w.scene)}</div>
+      <div class="conditions">구조 <strong>${esc(s.meta.metaMark)}</strong> · 분량 <strong>5문장</strong> · Word Bank <strong>필수 활용</strong></div>
+      <div class="word-bank"><div><strong>NOUNS</strong> ${esc(w.nouns)}</div><div style="margin-top:4px"><strong>VERBS</strong> ${esc(w.verbs)}</div></div>
+      <ol class="ws-list ws-write">${[1,2,3,4,5].map(i=>`<li><span class="write-num">${i}</span><span class="write-box-full"></span></li>`).join('')}</ol>
+      <div class="epl-stamp">— EPL영어학원 —</div>
+    </div></section>`;
+}
+function renderWsP6(w, no, s, ch) {
+  const num=String(no).padStart(3,'0');
+  return `<section class="ws form-P6">
+    <div class="ws-header"><div class="ws-badge" style="background:var(--c-P6)">P6</div>
+      <div class="ws-title"><div class="ws-no">WS-${num} · ${esc(s.meta.title)}</div><h2>${esc(w.theme)}</h2><div class="ws-sub">Unit Test · ${esc(s.meta.title)} 마스터</div></div>
+      <div class="ws-meta">${esc(s.meta.metaMark)}<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <div class="ws-instruction">${ch}<span class="instr-text">단위 테스트입니다. 15분 안에 천천히, 정확하게!</span></div>
+      <div class="conditions">제한 시간 <strong>15분</strong> · 총점 <strong>30점</strong> · 합격선 <strong>21점</strong></div>
+      <div class="mini-section"><div class="mini-title" style="background:var(--c-B)">Part 1 · 그림 보고 5문장 · 20점</div>
+        <div class="picture-area">${w.image_data ? `<img src="${w.image_data}" alt="${esc(w.theme)}">` : sceneSVG(w.scene)}</div>
+        <div class="word-bank"><div><strong>NOUNS</strong> ${esc(w.nouns)}</div><div style="margin-top:4px"><strong>VERBS</strong> ${esc(w.verbs)}</div></div>
+        <ol class="ws-list ws-write">${[1,2,3,4,5].map(i=>`<li><span class="write-num">${i}</span><span class="write-box-full"></span></li>`).join('')}</ol></div>
+      <div class="mini-section"><div class="mini-title" style="background:var(--c-P5)">Part 2 · 자유 영작 · 10점</div>
+        <p style="font-size:10pt;color:var(--ink-soft);margin:6px 0">${esc(w.free_prompt)}</p>
+        <ol class="ws-list ws-write">${[1,2,3].map(i=>`<li><span class="write-num">${i}</span><span class="write-box-full"></span></li>`).join('')}</ol></div>
+      <div class="epl-stamp">— EPL영어학원 —</div>
+    </div></section>`;
+}
+
+function renderAkCover() {
+  return `<section class="ws ak-cover"><div class="ak-cover-inner">
+    <div class="ak-stamp">ANSWER KEY</div><h1>정답 · 채점 가이드</h1>
+    <p>강사용 자료 · 학생에게 배포하지 마세요</p>
+    <div class="epl-stamp">— EPL영어학원 —</div></div></section>`;
+}
+function renderAkA(w, no) {
+  const num=String(no).padStart(3,'0');
+  return `<section class="ws ak form-A">
+    <div class="ws-header"><div class="ws-badge" style="background:#888">✓</div>
+      <div class="ws-title"><div class="ws-no">AK-${num} · 답지</div><h2>${esc(w.theme)}</h2><div class="ws-sub">${esc(w.sub)} · Answers</div></div>
+      <div class="ws-meta">정답<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <p class="ak-note">○ 주어 · □ 동사 — 표시된 부분이 정답입니다.</p>
+      <ol class="ws-list ak-list">${w.items.map(i=>`<li>${markSV(i)}</li>`).join('')}</ol>
+      <div class="epl-stamp">— EPL영어학원 (강사용) —</div>
+    </div></section>`;
+}
+function renderAkB(w, no) {
+  const num=String(no).padStart(3,'0');
+  const ans = w.model_answer;
+  return `<section class="ws ak form-B">
+    <div class="ws-header"><div class="ws-badge" style="background:#888">✓</div>
+      <div class="ws-title"><div class="ws-no">AK-${num} · 답지</div><h2>${esc(w.theme)}</h2><div class="ws-sub">${esc(w.sub)} · Answers</div></div>
+      <div class="ws-meta">정답<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <ol class="ws-list ak-list">${w.ko.map((k,i)=>`<li><span class="ak-ko">${esc(k)}</span> → <span class="ak-en">${markSV(ans[i]||'')}</span></li>`).join('')}</ol>
+      <p class="ak-note">※ 동등한 자연스러운 영어 표현도 정답.</p>
+      <div class="epl-stamp">— EPL영어학원 (강사용) —</div>
+    </div></section>`;
+}
+function renderAkC(w, no) {
+  const num=String(no).padStart(3,'0');
+  const ans = w.model_answer;
+  return `<section class="ws ak form-C">
+    <div class="ws-header"><div class="ws-badge" style="background:#888">✓</div>
+      <div class="ws-title"><div class="ws-no">AK-${num} · 답지</div><h2>${esc(w.theme)}</h2><div class="ws-sub">${esc(w.sub)} · Answers</div></div>
+      <div class="ws-meta">정답<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <ol class="ws-list ak-list">${w.ko.map((k,i)=>`<li><span class="ak-ko">${esc(k)}</span> → <span class="ak-en">${markSV(ans[i]||'')}</span></li>`).join('')}</ol>
+      <p class="ak-note">※ 자유 영작은 의미·문법·구조가 모두 통과하면 정답.</p>
+      <div class="epl-stamp">— EPL영어학원 (강사용) —</div>
+    </div></section>`;
+}
+function renderAkD(w, no) {
+  const num=String(no).padStart(3,'0');
+  return `<section class="ws ak form-D">
+    <div class="ws-header"><div class="ws-badge" style="background:#888">✓</div>
+      <div class="ws-title"><div class="ws-no">AK-${num} · 답지</div><h2>${esc(w.theme)}</h2><div class="ws-sub">${esc(w.sub)} · Answers</div></div>
+      <div class="ws-meta">정답<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <div class="mini-section"><div class="mini-title">Part 1 · 표시</div>
+        <ol class="ws-list ak-list">${w.part1.map(p=>`<li>${markSV(p)}</li>`).join('')}</ol></div>
+      <div class="mini-section"><div class="mini-title">Part 2 · 빈칸</div>
+        <ol class="ws-list ak-list">${w.part2_ko.map((k,i)=>`<li><span class="ak-ko">${esc(k)}</span> → <span class="ak-en">${markSV(w.part2_answers[i]||'')}</span></li>`).join('')}</ol></div>
+      <div class="mini-section"><div class="mini-title">Part 3 · 영작</div>
+        <ol class="ws-list ak-list">${w.part3_ko.map((k,i)=>`<li><span class="ak-ko">${esc(k)}</span> → <span class="ak-en">${markSV(w.part3_answers[i]||'')}</span></li>`).join('')}</ol></div>
+      <div class="epl-stamp">— EPL영어학원 (강사용) —</div>
+    </div></section>`;
+}
+function renderAkP5(w, no) {
+  const num=String(no).padStart(3,'0');
+  return `<section class="ws ak form-P5">
+    <div class="ws-header"><div class="ws-badge" style="background:#888">✓</div>
+      <div class="ws-title"><div class="ws-no">AK-${num} · 답지 + 채점표</div><h2>${esc(w.theme)}</h2><div class="ws-sub">Picture Writing · Model Answer</div></div>
+      <div class="ws-meta">정답<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <div class="ak-section"><div class="picture-area" style="height:38mm">${w.image_data ? `<img src="${w.image_data}" alt="${esc(w.theme)}">` : sceneSVG(w.scene)}</div></div>
+      <div class="ak-section"><h3>📋 모범 답안</h3>
+        <ol class="ws-list ak-list">${w.model_answer.map(m=>`<li>${markSV(m)}</li>`).join('')}</ol></div>
+      <div class="ak-section"><h3>💡 변형 가능 답안</h3>
+        <p style="font-size:10.5pt;color:var(--ink-soft);margin:0">${esc(w.variations||'')}</p></div>
+      <div class="ak-section"><h3>📊 채점표 (만점 20점)</h3>
+        <table class="rubric-table"><thead><tr><th>항목</th><th>채점 기준</th><th style="width:60px">점수</th></tr></thead><tbody>
+          <tr><td>구조 정확성</td><td>주어·동사가 명확하고 ${esc(w.theme)} 구조가 맞는지</td><td>__ / 5</td></tr>
+          <tr><td>분량</td><td>요구된 5문장 모두 작성</td><td>__ / 5</td></tr>
+          <tr><td>Word Bank 활용</td><td>Word Bank 단어 3개 이상 활용</td><td>__ / 5</td></tr>
+          <tr><td>철자·문법</td><td>스펠링·대문자·마침표 정확</td><td>__ / 5</td></tr>
+          <tr><td colspan="2" style="text-align:right">총점</td><td><strong>__ / 20</strong></td></tr>
+        </tbody></table>
+        <p class="ak-note">합격선: 14점 이상</p></div>
+      <div class="epl-stamp">— EPL영어학원 (강사용) —</div>
+    </div></section>`;
+}
+function renderAkP6(w, no) {
+  const num=String(no).padStart(3,'0');
+  return `<section class="ws ak form-P6">
+    <div class="ws-header"><div class="ws-badge" style="background:#888">✓</div>
+      <div class="ws-title"><div class="ws-no">AK-${num} · 단위 테스트 답지</div><h2>${esc(w.theme)}</h2><div class="ws-sub">Unit Test · Answers</div></div>
+      <div class="ws-meta">정답<br><strong>No. ${num}</strong></div></div>
+    <div class="ws-body">
+      <div class="ak-section"><div class="picture-area" style="height:38mm">${w.image_data ? `<img src="${w.image_data}" alt="${esc(w.theme)}">` : sceneSVG(w.scene)}</div></div>
+      <div class="ak-section"><h3>📋 Part 1 · 모범 답안 (20점)</h3>
+        <ol class="ws-list ak-list">${w.model_answer.map(m=>`<li>${markSV(m)}</li>`).join('')}</ol>
+        <p class="ak-note">채점: 1문장당 4점 (구조 + 문법 + 의미 + Word Bank)</p></div>
+      <div class="ak-section"><h3>📝 Part 2 · 자유 영작 (10점)</h3>
+        <p>주제: ${esc(w.free_prompt||'')}</p>
+        <p class="ak-note">채점: 3문장 × 3점 + 보너스 1점 (창의성)</p></div>
+      <div class="ak-section"><h3>📊 합격 기준</h3>
+        <p>총점 30점 · <strong>합격선 21점 (70%)</strong></p></div>
+      <div class="epl-stamp">— EPL영어학원 (강사용) —</div>
+    </div></section>`;
+}
+
+// ════════════════════════════════════════════════
+// 마스터 템플릿 (인쇄용 워크북)
+// ════════════════════════════════════════════════
+const MASTER_TEMPLATE = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>##TITLE## · EPL Vol. ##VOLUME##</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Fraunces:ital,wght@0,400;0,600;1,400;1,600&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --paper:#FAF5EC; --paper-deep:#F1E8D4; --ink:#3A332C; --ink-soft:#6B5E50; --rule:#C5B79C; --gold:#C8A861; --c-circle:#E89856; --c-square:#D97B6E; --c-A:#E89856; --c-B:#D97B6E; --c-C:#D4A23C; --c-D:#7FA088; --c-P5:#5BA89C; --c-P6:#A37650; }
+* { box-sizing:border-box; }
+body { margin:0; background:#E8E0D0; color:var(--ink); font-family:'IBM Plex Sans KR',sans-serif; font-size:11pt; line-height:1.4; padding:20px; }
+.book-cover, .ws { width:210mm; height:273mm; min-height:273mm; max-height:273mm; margin:0 auto 20px; background:var(--paper); border-radius:4px; box-shadow:0 4px 16px rgba(0,0,0,0.1); display:flex; flex-direction:column; page-break-after:always; page-break-inside:avoid; overflow:hidden; box-sizing:border-box; }
+.ws { padding:10mm 12mm; }
+.book-cover { background:linear-gradient(135deg,#FCFAF3 0%,#F5EDD9 60%,#EFE4CB 100%); padding:22mm 18mm 18mm; text-align:center; position:relative; align-items:center; justify-content:flex-start; }
+.book-cover::before { content:''; position:absolute; top:10mm; left:10mm; right:10mm; bottom:10mm; border:1.5px solid var(--gold); border-radius:2px; opacity:0.45; pointer-events:none; }
+.cover-meta { font-family:'Fraunces',serif; font-style:italic; font-size:11pt; color:#A68445; letter-spacing:0.3em; text-transform:uppercase; margin-bottom:10mm; flex-shrink:0; }
+.cover-title { font-family:'Gowun Batang',serif; font-weight:700; font-size:36pt; color:var(--ink); margin:0 0 5mm; flex-shrink:0; line-height:1.1; }
+.cover-subtitle { font-family:'Fraunces',serif; font-style:italic; font-size:14pt; color:var(--ink-soft); margin-bottom:12mm; flex-shrink:0; }
+.cover-chars { display:flex; justify-content:center; gap:8mm; margin:8mm 0 10mm; flex-shrink:0; }
+.cover-char { width:22mm; height:22mm; background:#FFFCF5; border-radius:50%; border:1.5px solid; display:flex; align-items:center; justify-content:center; font-family:'Gowun Batang',serif; font-size:18pt; font-weight:700; }
+.cover-desc { font-family:'Gowun Batang',serif; font-size:10.5pt; color:var(--ink-soft); max-width:130mm; margin:0 auto; line-height:1.7; flex-shrink:0; }
+.cover-stamp { font-family:'Fraunces',serif; font-size:9.5pt; color:#A68445; letter-spacing:0.3em; text-transform:uppercase; margin-top:auto; padding-top:12mm; flex-shrink:0; }
+.cover-epl { font-family:'Fraunces',serif; font-style:italic; font-size:9.5pt; color:#8F6E2F; letter-spacing:0.4em; margin-top:3mm; flex-shrink:0; }
+.ws-header { display:flex; align-items:center; gap:10px; padding:0 0 4mm; border-bottom:2px solid var(--ink); flex-shrink:0; }
+.ws-badge { width:11mm; height:11mm; border-radius:50%; color:white; font-family:'Fraunces',serif; font-style:italic; font-size:14pt; font-weight:600; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ws-title { flex:1; }
+.ws-no { font-family:'Fraunces',serif; font-style:italic; font-size:8pt; color:var(--ink-soft); letter-spacing:0.2em; margin-bottom:1mm; }
+.ws-title h2 { font-family:'Gowun Batang',serif; font-weight:700; font-size:14pt; color:var(--ink); margin:0 0 1mm; }
+.ws-sub { font-family:'Fraunces',serif; font-style:italic; font-size:9pt; color:var(--ink-soft); }
+.ws-meta { text-align:right; font-family:'Fraunces',serif; font-size:8pt; color:var(--ink-soft); }
+.ws-meta strong { font-style:italic; color:var(--ink); font-size:9pt; }
+.ws-body { flex:1; display:flex; flex-direction:column; min-height:0; overflow:hidden; padding-top:4mm; }
+.ws-instruction { background:rgba(232,152,86,0.08); border-left:3px solid var(--c-circle); padding:2mm 3mm; margin-bottom:2.5mm; display:flex; align-items:center; gap:8px; font-family:'Gowun Batang',serif; font-size:10pt; color:var(--ink); flex-shrink:0; }
+.char-mini { display:inline-flex; align-items:center; justify-content:center; width:6.5mm; height:6.5mm; border-radius:50%; border:1.5px solid; font-family:'Gowun Batang',serif; font-weight:700; font-size:9.5pt; flex-shrink:0; }
+.plus { font-family:'Fraunces',serif; color:var(--gold); font-size:11pt; margin:0 2px; }
+.instr-text { flex:1; }
+.ws-list { list-style:none; counter-reset:q; padding:0; margin:0; display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
+.ws-list li { counter-increment:q; font-family:'Fraunces',serif; font-size:11.5pt; color:var(--ink); line-height:1.35; padding:2.5mm 3mm 2.5mm 10mm; margin-bottom:1.5mm; position:relative; background:#FFFCF5; border:1.5px solid var(--rule); border-radius:6px; flex:1 1 0; min-height:11mm; display:flex; flex-direction:row; align-items:center; flex-wrap:nowrap; white-space:nowrap; overflow:hidden; }
+.ws-list li:last-child { margin-bottom:0; }
+.ws-list li::before { content:counter(q); position:absolute; left:3mm; top:50%; transform:translateY(-50%); width:5mm; height:5mm; border:1.5px solid var(--ink); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Sans KR',sans-serif; font-size:8pt; color:var(--ink); background:var(--paper); }
+.ws-list .ko { font-family:'Gowun Batang',serif; font-size:10.5pt; color:var(--ink); }
+.blank { display:inline-block; min-width:24mm; height:5mm; vertical-align:middle; margin:0 2px; }
+.ws-write li { padding:2.5mm 3mm 2.5mm 3mm; flex:1 1 0; min-height:14mm; display:flex; flex-direction:column; justify-content:flex-start; overflow:hidden; }
+.ws-write li::before { position:static; transform:none; display:inline-flex; margin:0 0 1.5mm; align-self:flex-start; background:var(--paper); }
+.ko-write { display:block; font-family:'Gowun Batang',serif; font-size:10.5pt; color:var(--ink); margin-bottom:1.5mm; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.write-box { display:block; width:100%; flex:1 1 auto; min-height:5mm; margin-top:1mm; }
+.mini-section .ws-list { flex:0 0 auto; }
+.mini-section .ws-list li { flex:0 0 auto; min-height:9mm; padding:1.5mm 3mm 1.5mm 10mm; margin-bottom:1.2mm; line-height:1.3; font-size:11pt; }
+.mini-section .ws-write li { flex:0 0 auto; min-height:10mm; flex-direction:row; align-items:center; gap:3mm; padding:2mm 3mm; }
+.mini-section .ws-write li::before { margin:0; flex-shrink:0; }
+.mini-section .ws-write .ko-write { flex:0 0 auto; margin:0; max-width:50%; font-size:10pt; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mini-section .ws-write .write-box { flex:1 1 auto; margin:0; height:6mm; min-height:6mm; }
+.write-num { display:inline-block; width:6mm; text-align:center; font-family:'Fraunces',serif; color:var(--gold); margin-right:2mm; align-self:center; flex-shrink:0; }
+.write-box-full { display:inline-block; width:calc(100% - 12mm); flex:1 1 auto; min-height:5mm; vertical-align:middle; }
+.word-bank { background:var(--paper-deep); border-radius:3px; padding:2mm 3mm; font-family:'Fraunces',serif; font-size:10pt; color:var(--ink); line-height:1.45; margin:0 0 2.5mm; flex-shrink:0; }
+.word-bank strong { font-family:'IBM Plex Sans KR',sans-serif; font-size:8pt; letter-spacing:0.1em; color:var(--ink-soft); font-weight:600; margin-right:8px; }
+.wb-top { margin-bottom:2.5mm; }
+.bonus-block { margin-top:2.5mm; flex-shrink:0; display:flex; flex-direction:column; }
+.bonus-title { font-family:'Gowun Batang',serif; font-weight:700; font-size:10pt; color:var(--ink); padding:1.2mm 3mm; background:var(--paper-deep); border-radius:3px; display:inline-block; align-self:flex-start; margin-bottom:1.5mm; }
+.bonus-item { background:#FFFCF5; border:1.5px solid var(--rule); border-radius:6px; padding:2mm 3mm; margin-bottom:1.5mm; display:flex; flex-direction:column; }
+.bonus-item:last-child { margin-bottom:0; }
+.bonus-ko { display:block; font-family:'Gowun Batang',serif; font-size:10pt; color:var(--ink); margin-bottom:1mm; flex-shrink:0; }
+.mini-section { background:#FFFCF5; border:1.5px solid var(--rule); border-radius:6px; padding:2.5mm 3mm; margin-bottom:2mm; flex-shrink:0; display:flex; flex-direction:column; }
+.mini-title { display:inline-block; background:var(--c-A); color:white; padding:1mm 3mm; border-radius:3px; font-family:'Gowun Batang',serif; font-weight:700; font-size:9pt; margin-bottom:2mm; align-self:flex-start; }
+.picture-area { background:#FFFCF5; border:1.5px solid var(--rule); border-radius:6px; padding:3mm; margin:2mm 0; display:flex; align-items:center; justify-content:center; height:55mm; flex-shrink:0; overflow:hidden; }
+.picture-area svg, .picture-area img { max-width:100%; max-height:100%; object-fit:contain; }
+.picture-area img { display:block; }
+.conditions { background:var(--paper-deep); padding:1.5mm 3mm; font-family:'Gowun Batang',serif; font-size:9pt; color:var(--ink); margin-bottom:2mm; border-radius:3px; flex-shrink:0; }
+.conditions strong { color:var(--c-circle); }
+.ws-cheer { background:rgba(217,123,110,0.1); border-left:3px solid var(--c-square); padding:2mm 3mm; margin-top:auto; display:flex; align-items:center; gap:8px; font-family:'Fraunces',serif; font-style:italic; font-size:10pt; color:var(--c-square); flex-shrink:0; }
+.epl-stamp { padding-top:2mm; margin-top:1.5mm; text-align:center; font-family:'Fraunces',serif; font-style:italic; font-size:9pt; color:var(--ink-soft); letter-spacing:0.3em; flex-shrink:0; }
+.ak-cover { background:#2A2520; color:#F1E8D4; display:flex; align-items:center; justify-content:center; }
+.ak-cover-inner { text-align:center; padding:40mm; }
+.ak-stamp { font-family:'Fraunces',serif; font-style:italic; font-size:14pt; color:var(--gold); letter-spacing:0.4em; margin-bottom:8mm; }
+.ak-cover h1 { font-family:'Gowun Batang',serif; font-size:36pt; margin:0 0 8mm; }
+.ak-cover p { font-family:'Fraunces',serif; font-style:italic; color:var(--gold); font-size:12pt; }
+.ak-cover .epl-stamp { color:var(--gold); margin-top:24mm; }
+.ak-list li { background:#FCF8EB; border-color:var(--gold); }
+.ak-list .ans-s { display:inline-block; padding:1px 8px; border:2px solid var(--c-circle); border-radius:50%; color:var(--c-circle); font-weight:700; }
+.ak-list .ans-v { display:inline-block; padding:1px 8px; border:2px solid var(--c-square); color:var(--c-square); font-weight:700; background:rgba(217,123,110,0.08); }
+.ak-list .ak-ko { font-family:'Gowun Batang',serif; font-size:11pt; color:var(--ink); }
+.ak-list .ak-en { font-family:'Fraunces',serif; color:var(--c-square); font-weight:600; font-size:11pt; }
+.ak-note { font-family:'Gowun Batang',serif; font-size:9.5pt; color:var(--ink-soft); margin:2mm 0; font-style:italic; }
+.ak-section { margin-bottom:3mm; }
+.ak-section h3 { font-family:'Gowun Batang',serif; font-weight:700; font-size:11pt; color:var(--ink); margin:0 0 1.5mm; }
+.rubric-table { width:100%; border-collapse:collapse; font-family:'IBM Plex Sans KR',sans-serif; font-size:9.5pt; margin:1.5mm 0; }
+.rubric-table th, .rubric-table td { border:1px solid var(--rule); padding:1.5mm 2.5mm; text-align:left; }
+.rubric-table th { background:var(--paper-deep); font-weight:600; }
+@media print {
+  body { background:white; padding:0; margin:0; }
+  .book-cover, .ws { margin:0 !important; width:100% !important; height:auto !important; min-height:calc(297mm - 24mm) !important; box-shadow:none !important; border-radius:0 !important; page-break-after:always !important; page-break-inside:avoid !important; }
+  .ws { padding:8mm 10mm !important; }
+  @page { size:A4 portrait; margin:12mm; }
+  * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+  .app-header, .volumes-panel, .preview-panel, .toolbar, .main { display:block !important; }
+  .app-header, .toolbar { display:none !important; }
+}
+</style></head><body>
+<section class="book-cover">
+  <div class="cover-meta">EPL · An Illustrated Workbook · Vol. ##VOLUME##</div>
+  <h1 class="cover-title">##TITLE##</h1>
+  <div class="cover-subtitle">##SUBTITLE##</div>
+  <div class="cover-chars">##COVER_CHARS##</div>
+  <div class="cover-desc">##DESCRIPTION##</div>
+  <div class="cover-stamp">32 WORKSHEETS + ANSWER KEYS · A4 PRINT READY</div>
+  <div class="cover-epl">— EPL영어학원 —</div>
+</section>
+##WORKSHEETS##
+##ANSWER_KEYS##
+</body></html>`;
+
+// ════════════════════════════════════════════════
+// 다운로드
+// ════════════════════════════════════════════════
+document.getElementById('btnGenerate').addEventListener('click', () => {
+  if (!state) { toast('먼저 권을 선택해 주세요', 'error'); return; }
+  try {
+    const html = generateWorkbookHTML(state);
+    const safe = (state.meta.title||'workbook').replace(/[^\w가-힣]/g,'');
+    const filename = `vol-${state.meta.volume}-${safe}`;
+
+    // 인쇄 시 기본 파일명이 되도록 새 창 title을 워크북 제목으로 지정
+    const htmlWithTitle = html.replace(
+      /<title>[^<]*<\/title>/,
+      `<title>${filename}</title>`
+    );
+
+    const blob = new Blob([htmlWithTitle], { type:'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, '_blank');
+    if (!w) {
+      URL.revokeObjectURL(url);
+      toast('팝업이 차단됨 — 브라우저에서 팝업 허용 후 다시 시도', 'error');
+      return;
+    }
+
+    // 폰트·이미지 로드 후 인쇄 다이얼로그 자동 호출
+    const triggerPrint = () => {
+      try {
+        w.focus();
+        w.print();
+      } catch(err) { console.error('[print] 실패:', err); }
+    };
+    w.addEventListener('load', () => {
+      // Google Fonts + 이미지 로드 여유시간
+      setTimeout(triggerPrint, 800);
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    });
+
+    toast('인쇄 창 열림 — "대상"에서 "PDF로 저장" 선택', 'success');
+  } catch(e) { console.error(e); toast('생성 오류: '+e.message, 'error'); }
+});
+
+document.getElementById('btnShuffle').addEventListener('click', () => {
+  if (!state) { toast('먼저 권을 선택해 주세요', 'error'); return; }
+  applyVolume(parseInt(state.meta.volume));
+  toast('🎲 셔플 완료 — 새 조합으로 재출제', 'success');
+});
+
+// ════════════════════════════════════════════════
+// 토스트
+// ════════════════════════════════════════════════
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type||'');
+  setTimeout(()=>{ t.className='toast'; }, 2500);
+}
+
+// ════════════════════════════════════════════════
+// OpenAI API Key 관리
+// ════════════════════════════════════════════════
+const API_KEY_STORAGE = 'epl-openai-key';
+function getApiKey() { return localStorage.getItem(API_KEY_STORAGE) || ''; }
+function setApiKey(key) {
+  if (key) localStorage.setItem(API_KEY_STORAGE, key);
+  else localStorage.removeItem(API_KEY_STORAGE);
+  updateApiKeyLabel();
+}
+function updateApiKeyLabel() {
+  const el = document.getElementById('apiKeyLabel');
+  const btn = document.getElementById('btnApiKey');
+  const key = getApiKey();
+  if (key) {
+    el.textContent = 'API ✓ ('+ key.slice(0,8) +'…)';
+    btn.classList.add('api-on');
+  } else {
+    el.textContent = 'API 미설정';
+    btn.classList.remove('api-on');
+  }
+}
+function openApiModal() {
+  document.getElementById('apiKeyInput').value = getApiKey();
+  document.getElementById('apiModal').classList.add('show');
+}
+function closeApiModal() { document.getElementById('apiModal').classList.remove('show'); }
+document.getElementById('btnApiKey').addEventListener('click', openApiModal);
+document.getElementById('btnCloseApiModal').addEventListener('click', closeApiModal);
+document.getElementById('apiModal').addEventListener('click', (e) => { if (e.target.id==='apiModal') closeApiModal(); });
+document.getElementById('btnSaveKey').addEventListener('click', () => {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-')) { toast('OpenAI API Key 형식이 아닙니다 (sk-로 시작)', 'error'); return; }
+  setApiKey(key);
+  closeApiModal();
+  toast('API Key 저장됨', 'success');
+});
+document.getElementById('btnClearKey').addEventListener('click', () => {
+  if (!confirm('API Key 삭제할까요?')) return;
+  setApiKey('');
+  document.getElementById('apiKeyInput').value = '';
+  toast('API Key 삭제됨', 'success');
+});
+
+document.getElementById('btnTestKey').addEventListener('click', async () => {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const resultEl = document.getElementById('apiTestResult');
+  if (!key.startsWith('sk-')) {
+    resultEl.innerHTML = '<div style="color:#A04030;background:#FDE8E5;padding:8px;border-radius:4px">❌ 키 형식 오류 — sk-로 시작해야 합니다</div>';
+    return;
+  }
+  resultEl.innerHTML = '<div style="color:var(--ink-soft);background:var(--paper-deep);padding:8px;border-radius:4px">⏳ 테스트 호출 중 (10~30초)... 그림 1장 생성을 시도합니다.</div>';
+  const prev = getApiKey();
+  localStorage.setItem(API_KEY_STORAGE, key);
+  try {
+    const img = await generateImage({ theme:'simple morning village with sun', nouns:'The sun', verbs:'rises' }, {});
+    resultEl.innerHTML = '<div style="color:#2A5A2A;background:#E0F0E0;padding:8px;border-radius:4px">✓ 키 정상 동작 — 그림 1장 생성 성공.<br>이제 저장 버튼 누르고, 우측 패널의 🎨 일괄 생성 9장을 진행하세요.<br><img src="'+img+'" style="width:120px;margin-top:8px;border-radius:4px"></div>';
+    updateApiKeyLabel();
+  } catch(err) {
+    if (prev) localStorage.setItem(API_KEY_STORAGE, prev);
+    else localStorage.removeItem(API_KEY_STORAGE);
+    let advice = '';
+    if (err.message.includes('401')) advice = '<br><strong>대처:</strong> 키가 무효하거나 만료. platform.openai.com/api-keys 에서 새 키 발급';
+    else if (err.message.includes('429')) advice = '<br><strong>대처:</strong> 결제 카드 등록 + 최초 $5 이상 충전 필요. platform.openai.com/settings/organization/billing/overview';
+    else if (err.message.includes('403')) advice = '<br><strong>대처:</strong> 조직 인증(verify) 필요. OpenAI 콘솔에서 Organization Verify 진행';
+    else if (err.message.toLowerCase().includes('cors') || err.message.toLowerCase().includes('network')) advice = '<br><strong>대처:</strong> 브라우저 확장(광고차단·VPN) 일시 꺼보기. 또는 다른 네트워크에서 시도';
+    resultEl.innerHTML = '<div style="color:#A04030;background:#FDE8E5;padding:10px;border-radius:4px">❌ 실패: '+esc(err.message)+advice+'</div>';
+  }
+});
+
+// ════════════════════════════════════════════════
+// DALL-E 3 이미지 생성
+// ════════════════════════════════════════════════
+async function generateImage(slot, meta) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error('API Key 없음');
+  
+  // ⚠️ 텍스트 필드만 안전하게 추출 (image_data 절대 제외)
+  const themeRaw = (typeof slot.theme === 'string') ? slot.theme : '';
+  const nounsRaw = (typeof slot.nouns === 'string') ? slot.nouns : '';
+  const verbsRaw = (typeof slot.verbs === 'string') ? slot.verbs : '';
+  
+  // 비정상 데이터 검증 (만약 누가 base64를 텍스트 필드에 잘못 넣었다면)
+  if (themeRaw.length > 500 || nounsRaw.length > 1000 || verbsRaw.length > 1000) {
+    console.error('[DALL-E] 텍스트 필드 비정상:', { 
+      theme_len: themeRaw.length, nouns_len: nounsRaw.length, verbs_len: verbsRaw.length 
+    });
+    throw new Error('슬롯 데이터 손상 — theme/nouns/verbs 필드 확인 필요');
+  }
+  
+  const structure = (meta && meta.structure) ? meta.structure : '1형식 (subject + verb)';
+  const level = (meta && meta.level) ? meta.level : 1;
+  
+  const stylePrefix = "Soft warm illustration in Blue Planet aesthetic. Beige paper background with subtle orange and sage green accents. Simple clean lines, gentle curves. Children's textbook illustration for ages 8-12 elementary school. No text, no labels, no letters in image. Premium minimalist style with natural lighting.";
+  
+  const nounsClean = nounsRaw.replace(/·/g, ', ').trim();
+  const verbsClean = verbsRaw.replace(/·/g, ', ').trim();
+  
+  const constraint = '\nCRITICAL CONSTRAINTS for an English grammar workbook (Level ' + level + ' · ' + structure + '):\n' +
+    (nounsClean ? '- Visible subjects MUST be exactly: ' + nounsClean + '.\n' : '') +
+    (verbsClean ? '- Each subject must clearly perform ONE of these active verbs: ' + verbsClean + '.\n' : '') +
+    '- ACTIVE VOICE only.\n' +
+    '- NO text, NO letters, NO captions inside the image.\n' +
+    '- Simple, obvious actions matching: subject + verb.';
+  
+  const prompt = stylePrefix + ' Scene: ' + (themeRaw || 'simple natural scene') + '. ' + constraint;
+  
+  // ✅ body 구성 — dall-e-3
+  const body = {
+    model: 'gpt-image-1',
+    prompt: prompt,
+    size: '1024x1024',
+    quality: 'medium',
+    n: 1
+  };
+  
+  const bodyStr = JSON.stringify(body);
+  
+  // 디버그 정보 (콘솔 + UI 둘 다)
+  console.log('[DALL-E] prompt 길이:', prompt.length, '· body 크기:', bodyStr.length, 'bytes');
+  console.log('[DALL-E] prompt:', prompt);
+  
+  // 안전 검증 — body가 비정상적으로 크면 차단
+  if (bodyStr.length > 10000) {
+    console.error('[DALL-E] body 비정상 크기:', bodyStr.length);
+    console.error('[DALL-E] body 일부:', bodyStr.slice(0, 500));
+    throw new Error('요청 body 비정상 (' + bodyStr.length + ' bytes). 슬롯 데이터에 base64가 섞였을 가능성. 데이터 초기화 필요.');
+  }
+  
+  let response;
+  try {
+    response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': 'Bearer ' + apiKey 
+      },
+      body: bodyStr
+    });
+  } catch (netErr) {
+    console.error('[DALL-E] 네트워크 오류', netErr);
+    throw new Error('네트워크 오류: ' + netErr.message);
+  }
+  
+  if (!response.ok) {
+    let errMsg = 'HTTP ' + response.status;
+    try {
+      const err = await response.json();
+      errMsg = err.error?.message || errMsg;
+      if (response.status === 401) errMsg = 'API Key 무효/만료 (401)';
+      if (response.status === 403) errMsg = 'API Key 권한 부족 (403)';
+      if (response.status === 429) errMsg = '요청 한도 초과/결제 미설정 (429): ' + errMsg;
+    } catch(e) {}
+    console.error('[DALL-E] HTTP 오류', response.status, errMsg);
+    throw new Error(errMsg);
+  }
+  
+  const data = await response.json();
+  if (!data.data?.[0]?.url && !data.data?.[0]?.b64_json) {
+    console.error('[DALL-E] 응답 형식 이상', data);
+    throw new Error('응답에 이미지 데이터 없음');
+  }
+
+  console.log('[DALL-E] 성공:', themeRaw);
+  // URL 방식 또는 base64 방식 둘 다 지원
+  if (data.data[0].b64_json) return 'data:image/png;base64,' + data.data[0].b64_json;
+  return data.data[0].url;
+}
+
+function renderThumbs() {
+  const grid = document.getElementById('thumbGrid');
+  if (!state || !state.P5) { grid.innerHTML = ''; return; }
+  const slots = [...state.P5, ...(state.P6||[])];
+  grid.innerHTML = slots.map((s,i) => `
+    <div class="thumb">
+      <span class="thumb-no">${i<8 ? 'P5-'+(i+1) : 'P6'}</span>
+      ${s.image_data ? `<img src="${s.image_data}" alt="${esc(s.theme)}">` : `<span>${i<8 ? '#'+(i+1) : 'TEST'}</span>`}
+    </div>`).join('');
+}
+
+document.getElementById('btnEditWs').addEventListener('click', openWsEditor);
+document.getElementById('btnCloseWs').addEventListener('click', closeWsEditor);
+document.getElementById('wsModal').addEventListener('click', e => { if (e.target.id==='wsModal') closeWsEditor(); });
+
+document.getElementById('btnBulkGenP5').addEventListener('click', async () => {
+  if (!state) { toast('먼저 권을 선택해 주세요', 'error'); return; }
+  if (!getApiKey()) { toast('API Key 먼저 설정해 주세요', 'error'); openApiModal(); return; }
+  const slots = [...state.P5, ...(state.P6||[])];
+  if (!confirm(`Vol. ${state.meta.volume} 그림 ${slots.length}장 일괄 생성 — 약 ${slots.length*60}원이 차감됩니다. 진행할까요?`)) return;
+  const btn = document.getElementById('btnBulkGenP5');
+  const progressEl = document.getElementById('bulkProgress');
+  btn.disabled = true;
+  let done = 0, failed = [];
+  for (let i = 0; i < slots.length; i++) {
+    const slot = slots[i];
+    const label = (i<8 ? 'P5-'+(i+1) : 'P6');
+    progressEl.innerHTML = `<div class="gen-progress">생성 중 ${i+1}/${slots.length} · ${label} · ${esc(slot.theme||'(테마 없음)')}<div class="gen-progress-bar"><div class="gen-progress-fill" style="width:${((i)/slots.length)*100}%"></div></div></div>`;
+    try {
+      const img = await generateImage(slot, state.meta);
+      if (i < 8) state.P5[i].image_data = img;
+      else state.P6[i-8].image_data = img;
+      autosave();
+      renderThumbs();
+      done++;
+    } catch (err) {
+      failed.push(label + '(' + err.message + ')');
+      // 첫 실패 시 즉시 중단 + alert로 명확한 진단 안내
+      if (i === 0) {
+        progressEl.innerHTML = `<div class="gen-progress" style="background:#FDE8E5;color:#A04030">❌ 첫 호출 실패: ${esc(err.message)}<br>키 모달에서 🧪 테스트 버튼으로 진단해 주세요.</div>`;
+        btn.disabled = false;
+        alert('그림 생성 실패\n\n' + err.message + '\n\n해결:\n1) 🔑 API 버튼 → 🧪 키 테스트 클릭\n2) 결과의 빨간 박스 메시지 확인\n\n흔한 원인:\n- 401: 키 무효 → 새 키 발급\n- 429: OpenAI 계정 결제 미설정 → 카드 등록 + 최초 충전 $5\n- CORS/네트워크: 광고차단·VPN 일시 끄기');
+        return;
+      }
+    }
+  }
+  progressEl.innerHTML = `<div class="gen-progress done">✅ 완료 ${done}/${slots.length}${failed.length ? '<br>⚠ 실패: '+failed.join(', ') : ''}<div class="gen-progress-bar"><div class="gen-progress-fill" style="width:100%"></div></div></div>`;
+  btn.disabled = false;
+  toast(`${done}장 생성 완료`, failed.length ? 'error' : 'success');
+});
+
+// ════════════════════════════════════════════════
+// 초기화
+// ════════════════════════════════════════════════
+renderVolumes();
+if (loadAutosave() && state && state.meta) {
+  renderCurrent();
+  const v = parseInt(state.meta.volume);
+  document.querySelectorAll('.vol-card').forEach(c => c.classList.toggle('active', parseInt(c.dataset.v)===v));
+} else {
+  applyVolume(1);
+}
+updateApiKeyLabel();
+renderThumbs();
+toast('준비 완료 — 권 번호 클릭만으로 출제됩니다', 'success');
+</script>
+</body>
+</html>
