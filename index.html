@@ -2517,7 +2517,7 @@ body { margin:0; background:#E8E0D0; color:var(--ink); font-family:'IBM Plex San
 // ════════════════════════════════════════════════
 // 다운로드
 // ════════════════════════════════════════════════
-document.getElementById('btnGenerate').addEventListener('click', () => {
+document.getElementById('btnGenerate').addEventListener('click', async () => {
   if (!state) { toast('먼저 권을 선택해 주세요', 'error'); return; }
   try {
     const html = generateWorkbookHTML(state);
@@ -2530,32 +2530,54 @@ document.getElementById('btnGenerate').addEventListener('click', () => {
       `<title>${filename}</title>`
     );
 
-    // 새 창에서 열기
-    const w = window.open('', '_blank');
-    if (!w) { toast('팝업 차단됨 — 팝업 허용 후 다시 시도', 'error'); return; }
-    w.document.write(htmlWithTitle);
-    w.document.close();
+    // 현재 페이지에 숨겨진 컨테이너로 렌더 → html2canvas → jsPDF → .pdf 다운로드
+    const container = document.createElement('div');
+    container.id = 'pdf-render';
+    container.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;';
+    container.innerHTML = htmlWithTitle.replace(/^[\s\S]*<body[^>]*>/i,'').replace(/<\/body>[\s\S]*$/i,'');
+    document.body.appendChild(container);
 
-    // 가이드바 삽입 (JS로 직접)
-    setTimeout(() => {
-      try {
-        const guide = w.document.createElement('div');
-        guide.id = 'pdf-guide';
-        guide.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#3A332C;color:#FAF5EC;padding:14px 24px;z-index:9999;display:flex;justify-content:space-between;align-items:center;font-family:sans-serif;font-size:14px';
-        guide.innerHTML = '<span>✅ PDF 저장 준비 완료</span>';
-        const btn = w.document.createElement('button');
-        btn.textContent = '🖨 PDF로 저장';
-        btn.style.cssText = 'padding:10px 24px;background:#C8A861;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer';
-        btn.onclick = function() { guide.style.display='none'; w.print(); };
-        guide.appendChild(btn);
-        w.document.body.insertBefore(guide, w.document.body.firstChild);
+    toast('PDF 생성 중... 잠시만 기다려 주세요', 'success');
 
-        // 인쇄 시 가이드 숨기기
-        const ps = w.document.createElement('style');
-        ps.textContent = '@media print{#pdf-guide{display:none!important}}';
-        w.document.head.appendChild(ps);
-      } catch(e) { console.error(e); }
-    }, 2000);
+    // 폰트 로드 대기
+    await new Promise(r => setTimeout(r, 1500));
+
+    try {
+      const pages = container.querySelectorAll('.book-cover, .ws');
+      if (!pages.length) throw new Error('페이지 없음');
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+      for (let i = 0; i < pages.length; i++) {
+        if (i > 0) pdf.addPage();
+        const el = pages[i];
+        el.style.width = '794px';
+        el.style.height = '1123px';
+        el.style.overflow = 'hidden';
+        el.style.position = 'relative';
+
+        const canvas = await html2canvas(el, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#FAF5EC',
+          logging: false
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.88);
+        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+
+        toast(`PDF 생성 중... ${i+1}/${pages.length} 페이지`, 'success');
+      }
+
+      pdf.save(filename + '.pdf');
+      toast('✅ PDF 저장 완료!', 'success');
+    } catch(err) {
+      console.error('[PDF]', err);
+      toast('PDF 실패: ' + err.message, 'error');
+    }
+    document.body.removeChild(container);
 
     // PDF 저장은 위 코드에서 처리됨
   } catch(e) { console.error(e); toast('생성 오류: '+e.message, 'error'); }
