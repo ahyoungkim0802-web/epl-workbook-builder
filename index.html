@@ -2528,27 +2528,14 @@ document.getElementById('btnGenerate').addEventListener('click', () => {
       `<title>${filename}</title>`
     );
 
-    const blob = new Blob([htmlWithTitle], { type:'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const w = window.open(url, '_blank');
+    const w = window.open('', '_blank');
     if (!w) {
-      URL.revokeObjectURL(url);
       toast('팝업이 차단됨 — 브라우저에서 팝업 허용 후 다시 시도', 'error');
       return;
     }
-
-    // 폰트·이미지 로드 후 인쇄 다이얼로그 자동 호출
-    const triggerPrint = () => {
-      try {
-        w.focus();
-        w.print();
-      } catch(err) { console.error('[print] 실패:', err); }
-    };
-    w.addEventListener('load', () => {
-      // Google Fonts + 이미지 로드 여유시간
-      setTimeout(triggerPrint, 800);
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    });
+    w.document.write(htmlWithTitle);
+    w.document.close();
+    setTimeout(() => { try { w.focus(); w.print(); } catch(err) {} }, 1500);
 
     toast('인쇄 창 열림 — "대상"에서 "PDF로 저장" 선택', 'success');
   } catch(e) { console.error(e); toast('생성 오류: '+e.message, 'error'); }
