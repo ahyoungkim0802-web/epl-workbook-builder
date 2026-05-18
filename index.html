@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EPL 워크북 자동 출제기 · Click & Print</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Fraunces:ital,wght@0,400;0,600;1,400;1,600&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -2528,17 +2530,48 @@ document.getElementById('btnGenerate').addEventListener('click', () => {
       `<title>${filename}</title>`
     );
 
-    // HTML 파일로 직접 다운로드
-    const blob = new Blob([htmlWithTitle], { type:'text/html;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename + '.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    // 숨겨진 iframe에서 렌더 → html2canvas → jsPDF
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;height:297mm;border:none;';
+    document.body.appendChild(iframe);
+    iframe.contentDocument.open();
+    iframe.contentDocument.write(htmlWithTitle);
+    iframe.contentDocument.close();
 
-    toast('HTML 다운로드 완료 — 파일 열고 Cmd+P로 PDF 저장', 'success');
+    toast('PDF 생성 중... 잠시 기다려 주세요', 'success');
+
+    iframe.onload = async () => {
+      try {
+        const pages = iframe.contentDocument.querySelectorAll('.book-cover, .ws');
+        if (!pages.length) { toast('페이지를 찾을 수 없습니다', 'error'); document.body.removeChild(iframe); return; }
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+        for (let i = 0; i < pages.length; i++) {
+          if (i > 0) pdf.addPage();
+          const canvas = await html2canvas(pages[i], {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#FAF5EC',
+            width: pages[i].scrollWidth,
+            height: pages[i].scrollHeight
+          });
+          const imgData = canvas.toDataURL('image/jpeg', 0.92);
+          const pageW = 210, pageH = 297;
+          pdf.addImage(imgData, 'JPEG', 0, 0, pageW, pageH);
+        }
+
+        pdf.save(filename + '.pdf');
+        toast('PDF 저장 완료!', 'success');
+      } catch(err) {
+        console.error('[PDF]', err);
+        toast('PDF 생성 실패: ' + err.message, 'error');
+      }
+      document.body.removeChild(iframe);
+    };
+
+    // PDF 저장은 위 코드에서 처리됨
   } catch(e) { console.error(e); toast('생성 오류: '+e.message, 'error'); }
 });
 
