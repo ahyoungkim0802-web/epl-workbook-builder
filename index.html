@@ -2528,16 +2528,17 @@ document.getElementById('btnGenerate').addEventListener('click', () => {
       `<title>${filename}</title>`
     );
 
-    const w = window.open('', '_blank');
-    if (!w) {
-      toast('팝업이 차단됨 — 브라우저에서 팝업 허용 후 다시 시도', 'error');
-      return;
-    }
-    w.document.write(htmlWithTitle);
-    w.document.close();
-    setTimeout(() => { try { w.focus(); w.print(); } catch(err) {} }, 1500);
+    // HTML 파일로 직접 다운로드
+    const blob = new Blob([htmlWithTitle], { type:'text/html;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 
-    toast('인쇄 창 열림 — "대상"에서 "PDF로 저장" 선택', 'success');
+    toast('HTML 다운로드 완료 — 파일 열고 Cmd+P로 PDF 저장', 'success');
   } catch(e) { console.error(e); toast('생성 오류: '+e.message, 'error'); }
 });
 
