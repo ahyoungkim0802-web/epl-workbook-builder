@@ -2530,20 +2530,36 @@ document.getElementById('btnGenerate').addEventListener('click', () => {
       `<title>${filename}</title>`
     );
 
-    // 새 창에서 열고 인쇄
+    // 새 창에서 열고, 폰트 로드 완료 후 인쇄 버튼 표시
     const w = window.open('', '_blank');
     if (!w) { toast('팝업 차단됨 — 팝업 허용 후 다시 시도', 'error'); return; }
-    w.document.write(htmlWithTitle);
+
+    // 가이드바 + 폰트 대기 스크립트를 HTML에 삽입
+    const guideHTML = `
+      <div id="pdf-guide" style="position:fixed;top:0;left:0;right:0;background:#3A332C;color:#FAF5EC;padding:14px 24px;z-index:9999;display:flex;justify-content:space-between;align-items:center;font-family:sans-serif;font-size:14px">
+        <span id="pdf-status">⏳ 페이지 준비 중...</span>
+        <button id="pdf-btn" disabled style="padding:10px 24px;background:#888;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:not-allowed">준비 중...</button>
+      </div>
+      <style>@media print{#pdf-guide{display:none!important}}</style>
+      <script>
+        function enablePrint(){
+          document.getElementById('pdf-status').textContent='✅ 준비 완료 — 버튼을 눌러 저장하세요';
+          var btn=document.getElementById('pdf-btn');
+          btn.disabled=false;btn.style.background='#C8A861';btn.style.cursor='pointer';
+          btn.textContent='🖨 PDF로 저장';
+          btn.onclick=function(){document.getElementById('pdf-guide').style.display='none';window.print();};
+        }
+        // 폰트 + 이미지 모두 로드 대기
+        if(document.fonts&&document.fonts.ready){
+          document.fonts.ready.then(function(){setTimeout(enablePrint,500);});
+        }else{
+          window.onload=function(){setTimeout(enablePrint,1000);};
+        }
+      <\/script>`;
+
+    const finalHTML = htmlWithTitle.replace('<body>', '<body>' + guideHTML);
+    w.document.write(finalHTML);
     w.document.close();
-    // 페이지 상단에 안내 + 인쇄 버튼 삽입
-    const guide = w.document.createElement('div');
-    guide.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#3A332C;color:#FAF5EC;padding:12px 20px;z-index:9999;display:flex;justify-content:space-between;align-items:center;font-family:sans-serif;font-size:14px;';
-    guide.innerHTML = '<span>📄 PDF 저장: 아래 버튼 또는 Cmd+P → "PDF로 저장" 선택</span><button onclick="this.parentElement.remove();window.print()" style="padding:8px 20px;background:#C8A861;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🖨 PDF로 저장</button>';
-    w.document.body.insertBefore(guide, w.document.body.firstChild);
-    // 인쇄 시 가이드바 숨기기
-    const printStyle = w.document.createElement('style');
-    printStyle.textContent = '@media print { div[style*="fixed"] { display:none !important; } }';
-    w.document.head.appendChild(printStyle);
 
     // PDF 저장은 위 코드에서 처리됨
   } catch(e) { console.error(e); toast('생성 오류: '+e.message, 'error'); }
