@@ -2530,46 +2530,20 @@ document.getElementById('btnGenerate').addEventListener('click', () => {
       `<title>${filename}</title>`
     );
 
-    // 숨겨진 iframe에서 렌더 → html2canvas → jsPDF
-    const iframe = document.createElement('iframe');
-    iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;height:297mm;border:none;';
-    document.body.appendChild(iframe);
-    iframe.contentDocument.open();
-    iframe.contentDocument.write(htmlWithTitle);
-    iframe.contentDocument.close();
-
-    toast('PDF 생성 중... 잠시 기다려 주세요', 'success');
-
-    iframe.onload = async () => {
-      try {
-        const pages = iframe.contentDocument.querySelectorAll('.book-cover, .ws');
-        if (!pages.length) { toast('페이지를 찾을 수 없습니다', 'error'); document.body.removeChild(iframe); return; }
-
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-
-        for (let i = 0; i < pages.length; i++) {
-          if (i > 0) pdf.addPage();
-          const canvas = await html2canvas(pages[i], {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: '#FAF5EC',
-            width: pages[i].scrollWidth,
-            height: pages[i].scrollHeight
-          });
-          const imgData = canvas.toDataURL('image/jpeg', 0.92);
-          const pageW = 210, pageH = 297;
-          pdf.addImage(imgData, 'JPEG', 0, 0, pageW, pageH);
-        }
-
-        pdf.save(filename + '.pdf');
-        toast('PDF 저장 완료!', 'success');
-      } catch(err) {
-        console.error('[PDF]', err);
-        toast('PDF 생성 실패: ' + err.message, 'error');
-      }
-      document.body.removeChild(iframe);
-    };
+    // 새 창에서 열고 인쇄
+    const w = window.open('', '_blank');
+    if (!w) { toast('팝업 차단됨 — 팝업 허용 후 다시 시도', 'error'); return; }
+    w.document.write(htmlWithTitle);
+    w.document.close();
+    // 페이지 상단에 안내 + 인쇄 버튼 삽입
+    const guide = w.document.createElement('div');
+    guide.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#3A332C;color:#FAF5EC;padding:12px 20px;z-index:9999;display:flex;justify-content:space-between;align-items:center;font-family:sans-serif;font-size:14px;';
+    guide.innerHTML = '<span>📄 PDF 저장: 아래 버튼 또는 Cmd+P → "PDF로 저장" 선택</span><button onclick="this.parentElement.remove();window.print()" style="padding:8px 20px;background:#C8A861;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🖨 PDF로 저장</button>';
+    w.document.body.insertBefore(guide, w.document.body.firstChild);
+    // 인쇄 시 가이드바 숨기기
+    const printStyle = w.document.createElement('style');
+    printStyle.textContent = '@media print { div[style*="fixed"] { display:none !important; } }';
+    w.document.head.appendChild(printStyle);
 
     // PDF 저장은 위 코드에서 처리됨
   } catch(e) { console.error(e); toast('생성 오류: '+e.message, 'error'); }
