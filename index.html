@@ -1859,9 +1859,8 @@ function makeBank(items) {
   // 문장의 모든 단어를 추출 (영어 원문에서 직접)
   const allWords = new Set();
   items.forEach(p => {
-    if (p.en) p.en.replace(/[.,!?]/g, '').split(/\s+/).forEach(w => { if (w) allWords.add(w); });
-  });
-  return shuffleArray([...allWords]).join(' · ');
+    if (p.en) p.en.replace(/[.,!?]/g, '').split(/\s+/).forEach(w => { if (w) allWords.add(w); }
+  return groups.join(' / ');
 }
 function shuffleStringList(arr) { return shuffleArray(arr.slice()).join(' · '); }
 function markSV(sentence) {
@@ -2410,7 +2409,7 @@ const MASTER_TEMPLATE = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF
 :root { --paper:#FAF5EC; --paper-deep:#F1E8D4; --ink:#3A332C; --ink-soft:#6B5E50; --rule:#C5B79C; --gold:#C8A861; --c-circle:#E89856; --c-square:#D97B6E; --c-A:#E89856; --c-B:#D97B6E; --c-C:#D4A23C; --c-D:#7FA088; --c-P5:#5BA89C; --c-P6:#A37650; }
 * { box-sizing:border-box; }
 body { margin:0; background:#E8E0D0; color:var(--ink); font-family:'IBM Plex Sans KR',sans-serif; font-size:11pt; line-height:1.4; padding:20px; }
-.book-cover, .ws { width:210mm; height:273mm; min-height:273mm; max-height:273mm; margin:0 auto 20px; background:var(--paper); border-radius:4px; box-shadow:0 4px 16px rgba(0,0,0,0.1); display:flex; flex-direction:column; page-break-after:always; page-break-inside:avoid; overflow:hidden; box-sizing:border-box; }
+.book-cover, .ws { width:210mm; height:270mm; min-height:270mm; max-height:270mm; margin:0 auto 20px; background:var(--paper); border-radius:4px; box-shadow:0 4px 16px rgba(0,0,0,0.1); display:flex; flex-direction:column; page-break-after:always; page-break-inside:avoid; overflow:hidden; box-sizing:border-box; }
 .ws { padding:10mm 12mm; }
 .book-cover { background:linear-gradient(135deg,#FCFAF3 0%,#F5EDD9 60%,#EFE4CB 100%); padding:22mm 18mm 18mm; text-align:center; position:relative; align-items:center; justify-content:flex-start; }
 .book-cover::before { content:''; position:absolute; top:10mm; left:10mm; right:10mm; bottom:10mm; border:1.5px solid var(--gold); border-radius:2px; opacity:0.45; pointer-events:none; }
@@ -2490,11 +2489,9 @@ body { margin:0; background:#E8E0D0; color:var(--ink); font-family:'IBM Plex San
 @media print {
   body { background:white; padding:0; margin:0; }
   .book-cover, .ws { margin:0 !important; width:100% !important; height:auto !important; min-height:calc(297mm - 24mm) !important; box-shadow:none !important; border-radius:0 !important; page-break-after:always !important; page-break-inside:avoid !important; }
-  .ws { padding:8mm 10mm !important; }
+  .ws { padding:10mm 12mm !important; }
   @page { size:A4 portrait; margin:12mm; }
   * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
-  .app-header, .volumes-panel, .preview-panel, .toolbar, .main { display:block !important; }
-  .app-header, .toolbar { display:none !important; }
 }
 </style></head><body>
 <section class="book-cover">
@@ -2520,6 +2517,7 @@ document.getElementById('btnGenerate').addEventListener('click', () => {
     const safe = (state.meta.title||'workbook').replace(/[^\w가-힣]/g,'');
     const filename = `vol-${state.meta.volume}-${safe}`;
 
+    // 인쇄 시 기본 파일명이 되도록 새 창 title을 워크북 제목으로 지정
     const htmlWithTitle = html.replace(
       /<title>[^<]*<\/title>/,
       `<title>${filename}</title>`
@@ -2532,11 +2530,7 @@ document.getElementById('btnGenerate').addEventListener('click', () => {
     }
     w.document.write(htmlWithTitle);
     w.document.close();
-
-    // 폰트·이미지 로드 후 인쇄 다이얼로그 자동 호출
-    setTimeout(() => {
-      try { w.focus(); w.print(); } catch(err) { console.error('[print] 실패:', err); }
-    }, 1500);
+    setTimeout(() => { try { w.focus(); w.print(); } catch(err) {} }, 1500);
 
     toast('인쇄 창 열림 — "대상"에서 "PDF로 저장" 선택', 'success');
   } catch(e) { console.error(e); toast('생성 오류: '+e.message, 'error'); }
@@ -2665,13 +2659,14 @@ async function generateImage(slot, meta) {
   
   const prompt = stylePrefix + ' Scene: ' + (themeRaw || 'simple natural scene') + '. ' + constraint;
   
-  // ✅ body 구성 — dall-e-3
+  // ✅ body 구성 — dall-e-3로 변경, response_format 명시
   const body = {
     model: 'gpt-image-1',
     prompt: prompt,
     size: '1024x1024',
     quality: 'medium',
-    n: 1
+    n: 1,
+    
   };
   
   const bodyStr = JSON.stringify(body);
@@ -2720,9 +2715,8 @@ async function generateImage(slot, meta) {
     console.error('[DALL-E] 응답 형식 이상', data);
     throw new Error('응답에 이미지 데이터 없음');
   }
-
+  
   console.log('[DALL-E] 성공:', themeRaw);
-  // URL 방식 또는 base64 방식 둘 다 지원
   if (data.data[0].b64_json) return 'data:image/png;base64,' + data.data[0].b64_json;
   return data.data[0].url;
 }
